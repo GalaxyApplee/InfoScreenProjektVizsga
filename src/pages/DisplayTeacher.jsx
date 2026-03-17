@@ -1,38 +1,36 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
+// Socket kapcsolat a szerverhez
 const socket = io("http://localhost:3000");
 
-function Display() {
-    const [isPaired, setIsPaired] = useState(!!localStorage.getItem("pairedCode"));
-    const [pairCodeInput, setPairCodeInput] = useState("");
-    
+function TeacherDisplay() {
     const [messages, setMessages] = useState([]);
     const [weeklyEvents, setWeeklyEvents] = useState([]);
     const [monthlyEvents, setMonthlyEvents] = useState([]);
     
-    const [viewMode, setViewMode] = useState('messages'); 
+    const [viewMode, setViewMode] = useState('messages'); // messages, weekly, monthly
     const [currentIndex, setCurrentIndex] = useState(0);
     const [popup, setPopup] = useState(null);
+    const [progress, setProgress] = useState(0);
 
-    // Adatok lekérése - CSAK A TANÁRI (target: teacher vagy all)
+    const ROTATION_TIME = 10000; // 10 másodperces váltás
+
     const fetchData = async () => {
         try {
-            // Összes poszt szűrése tanáriakra
             const postsRes = await fetch("http://localhost:3000/posts");
             const postsData = await postsRes.json();
+            // Csak a tanári (teacher) és az "all" típusú posztok
             setMessages(postsData.filter(m => m.target === "teacher" || m.target === "all"));
 
             const now = new Date();
             const oneJan = new Date(now.getFullYear(), 0, 1);
             const weekNum = Math.ceil((((now - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
             
-            // Heti események szűrése
             const weekRes = await fetch(`http://localhost:3000/posts/weeks/${weekNum}`);
             const weekData = await weekRes.json();
             setWeeklyEvents(weekData.filter(e => e.target === "teacher" || e.target === "all"));
 
-            // Havi események szűrése
             const monthRes = await fetch(`http://localhost:3000/posts/months/${now.getMonth() + 1}`);
             const monthData = await monthRes.json();
             setMonthlyEvents(monthData.filter(e => e.target === "teacher" || e.target === "all"));
@@ -41,45 +39,29 @@ function Display() {
         }
     };
 
-    // Párosítás kezelése
-    const handlePairing = async () => {
-        try {
-            const res = await fetch("http://localhost:3000/displays/pair", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code: pairCodeInput.toUpperCase() })
-            });
-            const data = await res.json();
-            if (data.success) {
-                localStorage.setItem("pairedCode", pairCodeInput.toUpperCase());
-                setIsPaired(true);
+    useEffect(() => {
+        fetchData();
+        socket.on("new_post", (newPost) => {
+            if (newPost.target === "teacher" || newPost.target === "all") {
+                setPopup(newPost);
+                fetchData();
+                setTimeout(() => setPopup(null), 15000); 
             } else {
-                alert("Érvénytelen kód!");
+                fetchData();
             }
-        } catch (err) {
-            alert("Szerver hiba a párosításkor.");
-        }
-    };
+        });
+        return () => socket.off("new_post");
+    }, []);
 
     useEffect(() => {
-        if (isPaired) {
-            fetchData();
-            socket.on("new_post", (newPost) => {
-                if (newPost.target === "teacher" || newPost.target === "all") {
-                    setPopup(newPost);
-                    fetchData();
-                    setTimeout(() => setPopup(null), 10000);
-                } else {
-                    fetchData();
-                }
-            });
-            return () => socket.off("new_post");
-        }
-    }, [isPaired]);
+        if (popup) return;
 
-    useEffect(() => {
-        if (popup || !isPaired) return;
-        const interval = setInterval(() => {
+        const timer = setInterval(() => {
+            setProgress((prev) => (prev >= 100 ? 0 : prev + (100 / (ROTATION_TIME / 100))));
+        }, 100);
+
+        const rotationInterval = setInterval(() => {
+            setProgress(0);
             if (viewMode === 'messages') {
                 if (messages.length > 0 && currentIndex < messages.length - 1) {
                     setCurrentIndex(prev => prev + 1);
@@ -89,115 +71,130 @@ function Display() {
                 }
             } else if (viewMode === 'weekly') {
                 setViewMode('monthly');
-            } else if (viewMode === 'monthly') {
+            } else {
                 setViewMode('messages');
                 setCurrentIndex(0);
             }
-        }, 8000);
-        return () => clearInterval(interval);
-    }, [viewMode, currentIndex, messages, popup, isPaired]);
+        }, ROTATION_TIME);
 
-    // --- KÓDBEKÉRŐ NÉZET ---
-    if (!isPaired) {
-        return (
-            <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center">
-                <div className="text-center p-5 border-blue-low bg-dark-soft shadow-blue" style={{ borderRadius: "20px", width: "400px" }}>
-                    <h2 className="text-blue mb-4">TANÁRI KIJELZŐ</h2>
-                    <p className="text-secondary small mb-4">Kérlek, add meg a Dashboardon generált 6 jegyű kódot!</p>
-                    <input 
-                        type="text" 
-                        className="form-control custom-input text-center mb-4 display-6" 
-                        placeholder="ABCDEF"
-                        value={pairCodeInput}
-                        onChange={(e) => setPairCodeInput(e.target.value)}
-                    />
-                    <button onClick={handlePairing} className="btn btn-blue-glow w-100 py-3 fw-bold">PÁROSÍTÁS</button>
-                </div>
-            </div>
-        );
-    }
+        return () => {
+            clearInterval(timer);
+            clearInterval(rotationInterval);
+        };
+    }, [viewMode, currentIndex, messages, popup]);
 
-    // --- POPUP (FRISS HÍR) ---
+    // --- POPUP NÉZET (KÉK) ---
     if (popup) {
         return (
             <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center text-center p-5">
-                <div className="p-5 shadow-blue" style={{ borderRadius: "30px", width: "90%", border: "10px solid #007bff" }}>
-                    <h1 className="display-1 fw-bold mb-4 text-blue">TANÁRI ÉRTESÍTÉS!</h1>
-                    <hr style={{ borderColor: "#007bff", borderWidth: "3px" }} className="my-5" />
-                    <h2 className="display-2 fw-bold text-white mb-3">{popup.title}</h2>
-                    <p className="display-4 text-light opacity-75">{popup.body}</p>
+                <div className="p-5 shadow-blue" style={{ borderRadius: "40px", width: "95%", border: "20px solid #007bff", backgroundColor: "#000" }}>
+                    <h1 className="display-1 fw-black mb-4" style={{ color: "#007bff", fontSize: "8rem" }}>! FIGYELEM !</h1>
+                    <hr style={{ borderColor: "#007bff", borderTop: "10px solid" }} className="my-5" />
+                    <h2 className="display-2 fw-bold text-white mb-4">{popup.title}</h2>
+                    <p className="display-4 text-white opacity-90 fw-medium">{popup.body}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "white", overflow: "hidden", position: "relative" }}>
+        <div style={{ backgroundColor: "#000", height: "100vh", color: "white", overflow: "hidden", position: "relative", fontFamily: "'Inter', sans-serif" }}>
             
-            {/* 1. NÉZET: ÜZENETEK */}
-            {viewMode === 'messages' && (
-                <div className="vh-100 d-flex flex-column align-items-center justify-content-center text-center p-4">
-                    {messages.length > 0 ? (
-                        <div className="animate__animated animate__fadeIn">
-                            <h4 className="text-blue-light mb-4 small fw-bold" style={{ letterSpacing: "3px" }}>TANÁRI ÜZENET ({currentIndex + 1} / {messages.length})</h4>
-                            <h1 className="display-1 fw-bold mb-4 text-blue">
-                                {messages[currentIndex].title}
-                            </h1>
-                            <p className="display-3 px-5 fw-light text-light">
-                                {messages[currentIndex].body}
-                            </p>
+            {/* KÉK PROGRESS BAR */}
+            <div className="position-absolute top-0 start-0 bg-primary shadow-blue" style={{ width: `${progress}%`, transition: 'width 0.1s linear', zIndex: 10, height: '8px' }}></div>
+
+            <div className="container-fluid h-100 d-flex flex-column pt-3">
+                
+                {/* 1. ÜZENETEK NÉZET */}
+                {viewMode === 'messages' && (
+                    <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center animate__animated animate__fadeIn">
+                        {messages.length > 0 ? (
+                            <div className="px-5 w-100" style={{ maxWidth: "1600px" }}>
+                                <div className="text-primary mb-4 fw-bold tracking-widest text-uppercase h3">
+                                    <i className="bi bi-briefcase-fill me-3"></i>
+                                    Tanári közlemények ({currentIndex + 1} / {messages.length})
+                                </div>
+                                
+                                <h1 className="display-1 fw-bold mb-5" style={{ fontSize: "5.5rem", color: "#007bff", lineHeight: "1.1" }}>
+                                    {messages[currentIndex].title}
+                                </h1>
+
+                                <div className="bg-dark bg-opacity-50 p-5 rounded-5 border border-primary border-opacity-25 shadow-lg">
+                                    <p className="display-3 fw-medium text-white mb-0" style={{ lineHeight: "1.4", wordWrap: "break-word" }}>
+                                        {messages[currentIndex].body}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="opacity-25 text-center">
+                                <i className="bi bi-clock-history display-1 mb-4 d-block text-primary"></i>
+                                <h1 className="display-3 fw-bold text-primary">Nincs aktuális hír</h1>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 2. HETI REND NÉZET */}
+                {viewMode === 'weekly' && (
+                    <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
+                        <h1 className="display-2 fw-bold mb-5 border-bottom border-primary pb-3 text-primary d-flex align-items-center">
+                            <i className="bi bi-calendar3 me-4"></i> TANÁRI HETI REND
+                        </h1>
+                        <div className="row g-4">
+                            {weeklyEvents.slice(0, 6).map((e, idx) => (
+                                <div key={e.id} className="col-12 animate__animated animate__fadeInLeft" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                    <div className="d-flex align-items-center p-4 bg-dark rounded-4 border-start border-primary border-5 shadow">
+                                        <div className="h1 fw-bold text-primary mb-0 me-5" style={{ minWidth: "280px" }}>
+                                            {new Date(e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
+                                        </div>
+                                        <div className="display-4 fw-bold text-white mb-0">{e.title}</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ) : (
-                        <h1 className="text-secondary opacity-25">Nincsenek aktuális tanári hírek.</h1>
-                    )}
-                </div>
-            )}
-
-            {/* 2. NÉZET: HETI ESEMÉNYEK */}
-            {viewMode === 'weekly' && (
-                <div className="vh-100 p-5 animate__animated animate__fadeIn">
-                    <h1 className="display-3 fw-bold mb-5 border-bottom border-blue-low pb-3 text-blue">TANÁRI HETI REND</h1>
-                    <div className="container">
-                        {weeklyEvents.length > 0 ? weeklyEvents.map(e => (
-                            <div key={e.id} className="row border-bottom border-secondary py-3 h2 align-items-center">
-                                <div className="col-4 fw-bold text-blue-light">
-                                    {new Date(e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
-                                </div>
-                                <div className="col-8 text-white">{e.title}</div>
-                            </div>
-                        )) : <h2 className="text-secondary">Nincs több tanári esemény ezen a héten.</h2>}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* 3. NÉZET: HAVI ESEMÉNYEK */}
-            {viewMode === 'monthly' && (
-                <div className="vh-100 p-5 animate__animated animate__fadeIn">
-                    <h1 className="display-3 fw-bold mb-5 border-bottom border-blue-low pb-3 text-blue">HAVI TANÁRI TERV</h1>
-                    <div className="row g-4">
-                        {monthlyEvents.length > 0 ? monthlyEvents.slice(0, 10).map(e => (
-                            <div key={e.id} className="col-6 mb-4">
-                                <div className="h3 d-flex align-items-center">
-                                    <span className="badge me-3 p-3 bg-blue-glow text-blue border border-blue">
-                                        {new Date(e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
-                                    </span>
-                                    <span className="text-white">{e.title}</span>
+                {/* 3. HAVI TERV NÉZET */}
+                {viewMode === 'monthly' && (
+                    <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
+                        <h1 className="display-2 fw-bold mb-5 border-bottom border-primary pb-3 text-primary d-flex align-items-center">
+                            <i className="bi bi-calendar-check me-4"></i> HAVI TANÁRI TERV
+                        </h1>
+                        <div className="row g-4">
+                            {monthlyEvents.slice(0, 8).map((e, idx) => (
+                                <div key={e.id} className="col-6 animate__animated animate__fadeInUp" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                    <div className="d-flex align-items-center bg-dark p-4 rounded-4 border border-secondary border-opacity-25 shadow">
+                                        <div className="bg-primary text-white p-3 rounded-3 fw-black me-4 h1 mb-0" style={{ minWidth: "120px", textAlign: "center" }}>
+                                            {new Date(e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
+                                        </div>
+                                        <div className="h2 fw-bold text-white text-truncate mb-0">{e.title}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        )) : <h2 className="text-secondary text-center mt-5">Nincs rögzített havi feladat.</h2>}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* ALSÓ SÁV - KÉK */}
-            <div className="position-absolute bottom-0 w-100 p-4 bg-dark-soft d-flex justify-content-between align-items-center border-top border-blue-low">
-                <div className="h4 m-0 fw-bold text-blue">INFOSCREEN <span className="text-white mx-2">|</span> TANÁRI SZERKESZTŐ</div>
-                <div className="h2 m-0 fw-bold text-blue">
-                    {new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
-                </div>
+                {/* ALSÓ INFORMÁCIÓS SÁV */}
+                <footer className="w-100 p-4 d-flex justify-content-between align-items-center mt-auto border-top border-secondary border-opacity-25">
+                    <div className="d-flex align-items-center">
+                        <div className="h2 m-0 fw-black tracking-tighter">
+                            <span className="text-primary">INFO</span>SCREEN <span className="text-secondary opacity-50 mx-3">|</span> <span className="text-white fw-light opacity-75">TANÁRI TERMINÁL</span>
+                        </div>
+                    </div>
+                    <div className="text-end">
+                        <div className="display-3 m-0 fw-black text-primary">
+                            {new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="h4 text-secondary fw-bold text-uppercase mb-0">
+                            {new Date().toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                </footer>
             </div>
         </div>
     );
 }
 
-export default Display;
+export default TeacherDisplay;

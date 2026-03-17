@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import kepem from '../assets/1977.jpg';
 
 function DashboardPage() {
     const { user, logout } = useAuth();
-    const navigate = useNavigate();
     
     const [posts, setPosts] = useState([]);
     const [displays, setDisplays] = useState([]);
@@ -34,7 +33,6 @@ function DashboardPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // ÚJ KIJELZŐ MENTÉSE
     const handleSaveDisplay = async () => {
         if (!newName) return;
         try {
@@ -51,7 +49,6 @@ function DashboardPage() {
         } catch (err) { alert("Hiba a mentésnél!"); }
     };
 
-    // ÜZENET TÖRLÉSE
     const handleDeletePost = async (id) => {
         if (window.confirm("Biztosan törölni szeretnéd ezt az üzenetet?")) {
             try {
@@ -63,7 +60,6 @@ function DashboardPage() {
         }
     };
 
-    // KIJELZŐ TÖRLÉSE
     const deleteDisplay = async (id) => {
         if (window.confirm("Törlöd a kijelzőt?")) {
             await fetch(`http://localhost:3000/displays/${id}`, { method: "DELETE" });
@@ -73,7 +69,7 @@ function DashboardPage() {
 
     return (
         <div style={{ minHeight: "100vh", backgroundColor: "#000", color: "#fff" }}>
-            <div className="container-fluid DashBoardBG p-0">
+            <div className="container-fluid p-0">
                 <div className="row g-0">
                     
                     {/* SIDEBAR */}
@@ -84,41 +80,63 @@ function DashboardPage() {
                             </div>
                             <ul className="nav flex-column px-3">
                                 <li className="nav-item mb-2">
-                                    <Link className="nav-link active-orangeSidebar" to="/dashboard"><i className="bi bi-house-door me-2"></i> Vezérlőpult</Link>
+                                    <Link className="nav-link active-orangeSidebar" to="/dashboard">
+                                        <i className="bi bi-house-door me-2"></i> Vezérlőpult
+                                    </Link>
                                 </li>
                                 <li className="nav-item mb-2">
-                                    <Link className="nav-link OrangeText" to="/newmessage"><i className="bi bi-chat-dots me-2"></i> Új üzenet</Link>
+                                    <Link className="nav-link OrangeText" to="/newmessage">
+                                        <i className="bi bi-chat-dots me-2"></i> Új üzenet
+                                    </Link>
                                 </li>
                                 <li className="nav-item mb-2">
-                                    <Link className="nav-link OrangeText" to="/events"><i className="bi bi-calendar-event me-2"></i> Események</Link>
+                                    <Link className="nav-link OrangeText" to="/events">
+                                        <i className="bi bi-calendar-event me-2"></i> Események
+                                    </Link>
+                                </li>
+                                {/* VISSZARAKOTT FIÓK BEÁLLÍTÁSOK GOMB */}
+                                <li className="nav-item mb-2">
+                                    <Link className="nav-link OrangeText" to="/settings">
+                                        <i className="bi bi-person-gear me-2"></i> Fiók beállítások
+                                    </Link>
                                 </li>
                             </ul>
                         </div>
+
+                        {/* ALSÓ RÉSZ: USER INFO ÉS LOGOUT */}
                         <div className="px-3 pb-4">
-                            <button onClick={() => logout()} className="btn btn-outline-danger w-100 border-0">Kijelentkezés</button>
+                            <div className="small text-secondary mb-3 text-center border-top border-secondary pt-3">
+                                Belépve: <span className="text-white fw-bold">{user?.username}</span>
+                            </div>
+                            <button onClick={() => logout()} className="btn btn-outline-danger w-100 border-0">
+                                <i className="bi bi-box-arrow-right me-2"></i> Kijelentkezés
+                            </button>
                         </div>
                     </nav>
 
                     {/* MAIN CONTENT */}
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                         <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-                            <h2 className="h4 text-secondary m-0">Vezérlőpult</h2>
+                            <div>
+                                <h2 className="h4 text-white m-0">Vezérlőpult</h2>
+                                <p className="text-secondary small m-0">Üdvözöljük, {user?.name}!</p>
+                            </div>
                             <span className={`badge ${isServerOnline ? 'bg-success' : 'bg-danger'}`}>
                                 {isServerOnline ? 'SERVER ONLINE' : 'SERVER OFFLINE'}
                             </span>
                         </header>
 
-                        {/* KIJELZŐK */}
+                        {/* KIJELZŐK SZEKCIÓ */}
                         <div className="card bg-dark border-secondary mb-5 shadow">
                             <div className="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center py-3">
                                 <h5 className="m-0 text-white fw-bold">AKTÍV KIJELZŐK</h5>
-                                <button onClick={() => setShowModal(true)} className="btn fw-bold px-4" style={{ backgroundColor: "#ff6600", color: "#000" }}>
+                                <button onClick={() => setShowModal(true)} className="btn btn-orange-glow fw-bold px-4 text-white">
                                     + ÚJ KÓD
                                 </button>
                             </div>
                             <div className="card-body">
                                 <div className="row g-3">
-                                    {displays.map(d => (
+                                    {displays.length > 0 ? displays.map(d => (
                                         <div key={d.id} className="col-md-4">
                                             <div className="p-3 border border-secondary rounded bg-black text-center position-relative">
                                                 <div className="text-secondary small">{d.name}</div>
@@ -126,10 +144,12 @@ function DashboardPage() {
                                                 <div className={`badge mt-2 ${d.type === 'student' ? 'text-primary' : 'text-warning'}`}>
                                                     {d.type.toUpperCase()}
                                                 </div>
-                                                <button onClick={() => deleteDisplay(d.id)} className="btn btn-link text-danger btn-sm position-absolute top-0 end-0"><i className="bi bi-trash"></i></button>
+                                                <button onClick={() => deleteDisplay(d.id)} className="btn btn-link text-danger btn-sm position-absolute top-0 end-0">
+                                                    <i className="bi bi-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : <p className="text-secondary text-center">Nincs aktív kijelző regisztrálva.</p>}
                                 </div>
                             </div>
                         </div>
@@ -142,22 +162,30 @@ function DashboardPage() {
                                     <thead>
                                         <tr className="text-secondary small border-secondary">
                                             <th className="ps-4">CÍM</th>
-                                            <th>CÉL</th>
-                                            <th className="text-end pe-4">TÖRLÉS</th>
+                                            <th>CÉLCSOPORT</th>
+                                            <th className="text-end pe-4">MŰVELET</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {posts.map(p => (
+                                        {posts.length > 0 ? posts.map(p => (
                                             <tr key={p.id} className="align-middle border-secondary">
                                                 <td className="ps-4 fw-bold" style={{ color: "#ff6600" }}>{p.title}</td>
-                                                <td><span className="badge border border-secondary text-secondary">{p.target?.toUpperCase()}</span></td>
+                                                <td>
+                                                    <span className={`badge border ${p.target === 'teacher' ? 'border-warning text-warning' : 'border-primary text-primary'}`}>
+                                                        {p.target?.toUpperCase()}
+                                                    </span>
+                                                </td>
                                                 <td className="text-end pe-4">
-                                                    <button onClick={() => handleDeletePost(p.id)} className="btn btn-link text-danger">
-                                                        <i className="bi bi-x-circle"></i>
+                                                    <button onClick={() => handleDeletePost(p.id)} className="btn btn-link text-danger p-0">
+                                                        <i className="bi bi-trash-fill fs-5"></i>
                                                     </button>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="3" className="text-center py-4 text-secondary">Nincsenek megjeleníthető üzenetek.</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -166,19 +194,19 @@ function DashboardPage() {
                 </div>
             </div>
 
-            {/* MODAL */}
+            {/* MODAL AZ ÚJ KIJELZŐHÖZ */}
             {showModal && (
                 <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000 }}>
                     <div className="card bg-dark border-secondary p-4 shadow-lg" style={{ width: "380px" }}>
-                        <h5 className="text-orange fw-bold mb-4 text-center">ÚJ KIJELZŐ</h5>
-                        <input type="text" className="form-control bg-black border-secondary text-white mb-3" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Név (pl. Aula TV)" />
+                        <h5 className="text-orange fw-bold mb-4 text-center">ÚJ KIJELZŐ LÉTREHOZÁSA</h5>
+                        <input type="text" className="form-control bg-black border-secondary text-white mb-3" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Kijelző neve (pl. Tanári)" />
                         <div className="btn-group w-100 mb-4">
                             <button onClick={() => setNewType("student")} className={`btn btn-sm ${newType === 'student' ? 'btn-primary' : 'btn-outline-secondary'}`}>DIÁK</button>
                             <button onClick={() => setNewType("teacher")} className={`btn btn-sm ${newType === 'teacher' ? 'btn-warning text-dark' : 'btn-outline-secondary'}`}>TANÁRI</button>
                         </div>
                         <div className="d-flex gap-2">
                             <button onClick={() => setShowModal(false)} className="btn btn-secondary flex-fill">Mégse</button>
-                            <button onClick={handleSaveDisplay} className="btn flex-fill fw-bold" style={{ backgroundColor: "#ff6600", color: "#000" }}>Mentés</button>
+                            <button onClick={handleSaveDisplay} className="btn btn-orange-glow flex-fill fw-bold">Kód generálása</button>
                         </div>
                     </div>
                 </div>

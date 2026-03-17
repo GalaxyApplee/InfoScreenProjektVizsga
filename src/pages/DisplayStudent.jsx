@@ -4,21 +4,21 @@ import io from "socket.io-client";
 const socket = io("http://localhost:3000");
 
 function StudentDisplay() {
-    // Elkülönített localStorage kulcs, hogy ne ütközzön a tanárival
     const [isPaired, setIsPaired] = useState(!!localStorage.getItem("pairedCode_student"));
     const [pairCodeInput, setPairCodeInput] = useState("");
-    
     const [messages, setMessages] = useState([]);
     const [weeklyEvents, setWeeklyEvents] = useState([]);
     const [monthlyEvents, setMonthlyEvents] = useState([]);
-    
-    const [viewMode, setViewMode] = useState('messages'); 
+    const [viewMode, setViewMode] = useState('messages');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [popup, setPopup] = useState(null);
+    const [progress, setProgress] = useState(0);
+
+    const ORANGE_COLOR = "#ff6600"; // Igazi mély narancssárga
+    const ROTATION_TIME = 12000;
 
     const fetchData = async () => {
         try {
-            // CSAK DIÁKOKNAK (target: student vagy all)
             const postsRes = await fetch("http://localhost:3000/posts");
             const postsData = await postsRes.json();
             setMessages(postsData.filter(m => m.target === "student" || m.target === "all"));
@@ -54,7 +54,7 @@ function StudentDisplay() {
                 alert("Érvénytelen kód!");
             }
         } catch (err) {
-            alert("Szerver hiba a párosításkor.");
+            alert("Szerver hiba.");
         }
     };
 
@@ -65,7 +65,7 @@ function StudentDisplay() {
                 if (newPost.target === "student" || newPost.target === "all") {
                     setPopup(newPost);
                     fetchData();
-                    setTimeout(() => setPopup(null), 10000);
+                    setTimeout(() => setPopup(null), 15000); 
                 } else {
                     fetchData();
                 }
@@ -76,7 +76,11 @@ function StudentDisplay() {
 
     useEffect(() => {
         if (popup || !isPaired) return;
-        const interval = setInterval(() => {
+        const timer = setInterval(() => {
+            setProgress((prev) => (prev >= 100 ? 0 : prev + (100 / (ROTATION_TIME / 100))));
+        }, 100);
+        const rotationInterval = setInterval(() => {
+            setProgress(0);
             if (viewMode === 'messages') {
                 if (messages.length > 0 && currentIndex < messages.length - 1) {
                     setCurrentIndex(prev => prev + 1);
@@ -86,112 +90,124 @@ function StudentDisplay() {
                 }
             } else if (viewMode === 'weekly') {
                 setViewMode('monthly');
-            } else if (viewMode === 'monthly') {
+            } else {
                 setViewMode('messages');
                 setCurrentIndex(0);
             }
-        }, 8000);
-        return () => clearInterval(interval);
+        }, ROTATION_TIME);
+        return () => { clearInterval(timer); clearInterval(rotationInterval); };
     }, [viewMode, currentIndex, messages, popup, isPaired]);
 
-    // --- KÓDBEKÉRŐ NÉZET (NARANCS) ---
     if (!isPaired) {
         return (
             <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center">
-                <div className="text-center p-5 border-orange-low bg-dark-soft shadow-orange" style={{ borderRadius: "20px", width: "400px" }}>
-                    <h2 className="text-orange mb-4 fw-bold">DIÁK KIJELZŐ</h2>
-                    <p className="text-secondary small mb-4">Add meg a Dashboardon generált 6 jegyű kódot!</p>
+                <div className="text-center p-5 bg-dark shadow-lg" style={{ borderRadius: "20px", width: "450px", border: `2px solid ${ORANGE_COLOR}` }}>
+                    <h2 style={{ color: ORANGE_COLOR }} className="mb-4 fw-bold">DIÁK KIJELZŐ</h2>
                     <input 
                         type="text" 
-                        className="form-control custom-input-orange text-center mb-4 display-6" 
-                        placeholder="ABCDEF"
+                        className="form-control bg-black border-secondary text-center mb-4 display-6 fw-bold" 
+                        placeholder="KÓD"
                         value={pairCodeInput}
+                        maxLength="6"
                         onChange={(e) => setPairCodeInput(e.target.value.toUpperCase())}
+                        style={{ color: ORANGE_COLOR, letterSpacing: "10px", borderColor: ORANGE_COLOR }}
                     />
-                    <button onClick={handlePairing} className="btn btn-orange-glow w-100 py-3 fw-bold">PÁROSÍTÁS</button>
+                    <button onClick={handlePairing} className="btn w-100 py-3 fw-bold text-black" style={{ backgroundColor: ORANGE_COLOR }}>PÁROSÍTÁS</button>
                 </div>
             </div>
         );
     }
 
-    // --- POPUP (NARANCS FRISS HÍR) ---
     if (popup) {
         return (
-            <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center text-center p-5">
-                <div className="p-5 shadow-orange" style={{ borderRadius: "30px", width: "90%", border: "10px solid #ff6600" }}>
-                    <h1 className="display-1 fw-bold mb-4" style={{ color: "#ff6600" }}>FRISS HÍR!</h1>
-                    <hr style={{ borderColor: "#ff6600", borderWidth: "3px" }} className="my-5" />
-                    <h2 className="display-2 fw-bold text-white mb-3">{popup.title}</h2>
-                    <p className="display-4 text-light opacity-75">{popup.body}</p>
+            <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center text-center p-5 animate__animated animate__bounceIn">
+                <div style={{ borderRadius: "40px", width: "95%", border: `20px solid ${ORANGE_COLOR}`, backgroundColor: "#000", boxShadow: `0 0 50px ${ORANGE_COLOR}44` }} className="p-5">
+                    <div style={{ backgroundColor: ORANGE_COLOR }} className="badge text-black px-4 py-2 mb-4 h4 fw-bold">RENDKÍVÜLI HÍR</div>
+                    <h1 className="display-1 fw-bold mb-4 mt-2">{popup.title}</h1>
+                    <p className="display-3 fw-bold text-white">{popup.body}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div style={{ backgroundColor: "#000", minHeight: "100vh", color: "white", overflow: "hidden", position: "relative" }}>
+        <div style={{ backgroundColor: "#000", height: "100vh", color: "white", overflow: "hidden", position: "relative" }}>
             
-            {/* 1. NÉZET: ÜZENETEK */}
-            {viewMode === 'messages' && (
-                <div className="vh-100 d-flex flex-column align-items-center justify-content-center text-center p-4">
-                    {messages.length > 0 ? (
-                        <div className="animate__animated animate__fadeIn">
-                            <h4 className="text-orange-light mb-4 small fw-bold" style={{ letterSpacing: "3px" }}>DIÁK ÜZENET ({currentIndex + 1} / {messages.length})</h4>
-                            <h1 className="display-1 fw-bold mb-4" style={{ color: "#ff6600" }}>
-                                {messages[currentIndex].title}
-                            </h1>
-                            <p className="display-3 px-5 fw-light text-light">
-                                {messages[currentIndex].body}
-                            </p>
+            {/* NARANCSSÁRGA TÖLTŐ CSÍK */}
+            <div className="position-absolute top-0 start-0" style={{ width: `${progress}%`, transition: 'width 0.1s linear', zIndex: 10, height: '10px', backgroundColor: ORANGE_COLOR, boxShadow: `0 0 15px ${ORANGE_COLOR}` }}></div>
+
+            <div className="container-fluid h-100 d-flex flex-column pt-4">
+                
+                {viewMode === 'messages' && (
+                    <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center animate__animated animate__fadeIn">
+                        {messages.length > 0 ? (
+                            <div className="px-5 w-100" style={{ maxWidth: "1500px" }}>
+                                <div style={{ color: ORANGE_COLOR }} className="mb-3 fw-bold tracking-widest text-uppercase h4">Hírek ({currentIndex + 1} / {messages.length})</div>
+                                <h1 className="display-1 fw-bold mb-5 text-white" style={{ fontSize: "5.5rem", textShadow: `0 0 20px ${ORANGE_COLOR}33` }}>{messages[currentIndex].title}</h1>
+                                
+                                <div className="p-5 rounded-5 border border-2 shadow-lg" style={{ backgroundColor: "#080808", borderColor: `${ORANGE_COLOR}66` }}>
+                                    <p className="display-2 fw-bold text-white mb-0" style={{ lineHeight: "1.4", wordWrap: "break-word" }}>
+                                        {messages[currentIndex].body}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="opacity-25 text-center">
+                                <h1 className="display-3 fw-bold">Nincs hír</h1>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {viewMode === 'weekly' && (
+                    <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
+                        <h1 className="display-3 fw-bold mb-5 border-bottom pb-3" style={{ color: ORANGE_COLOR, borderColor: ORANGE_COLOR }}><i className="bi bi-calendar3 me-3"></i>HETI REND</h1>
+                        <div className="row g-4">
+                            {weeklyEvents.slice(0, 6).map((e, idx) => (
+                                <div key={e.id} className="col-12 animate__animated animate__fadeInLeft" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                    <div className="d-flex align-items-center p-4 bg-dark rounded-4 border-start border-5 shadow" style={{ borderLeftColor: ORANGE_COLOR }}>
+                                        <div className="h1 fw-bold mb-0 me-5" style={{ minWidth: "250px", color: ORANGE_COLOR }}>
+                                            {new Date(e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
+                                        </div>
+                                        <div className="h1 fw-bold text-white mb-0">{e.title}</div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ) : (
-                        <h1 className="text-secondary opacity-25">Nincsenek aktuális üzenetek.</h1>
-                    )}
-                </div>
-            )}
-
-            {/* 2. NÉZET: HETI ESEMÉNYEK */}
-            {viewMode === 'weekly' && (
-                <div className="vh-100 p-5 animate__animated animate__fadeIn">
-                    <h1 className="display-3 fw-bold mb-5 border-bottom border-orange-low pb-3" style={{ color: "#ff6600" }}>HETI REND</h1>
-                    <div className="container">
-                        {weeklyEvents.length > 0 ? weeklyEvents.map(e => (
-                            <div key={e.id} className="row border-bottom border-secondary py-3 h2 align-items-center">
-                                <div className="col-4 fw-bold" style={{ color: "#ff944d" }}>
-                                    {new Date(e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
-                                </div>
-                                <div className="col-8 text-white">{e.title}</div>
-                            </div>
-                        )) : <h2 className="text-secondary">Nincs több esemény ezen a héten.</h2>}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* 3. NÉZET: HAVI ESEMÉNYEK */}
-            {viewMode === 'monthly' && (
-                <div className="vh-100 p-5 animate__animated animate__fadeIn">
-                    <h1 className="display-3 fw-bold mb-5 border-bottom border-orange-low pb-3" style={{ color: "#ff6600" }}>HAVI TERV</h1>
-                    <div className="row g-4">
-                        {monthlyEvents.length > 0 ? monthlyEvents.slice(0, 10).map(e => (
-                            <div key={e.id} className="col-6 mb-4">
-                                <div className="h3 d-flex align-items-center">
-                                    <span className="badge me-3 p-3 btn-orange-glow text-black border border-orange" style={{backgroundColor: '#ff6600'}}>
-                                        {new Date(e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
-                                    </span>
-                                    <span className="text-white">{e.title}</span>
+                {viewMode === 'monthly' && (
+                    <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
+                        <h1 className="display-3 fw-bold mb-5 border-bottom pb-3" style={{ color: ORANGE_COLOR, borderColor: ORANGE_COLOR }}><i className="bi bi-calendar-check me-3"></i>HAVI TERV</h1>
+                        <div className="row g-4">
+                            {monthlyEvents.slice(0, 8).map((e, idx) => (
+                                <div key={e.id} className="col-6 animate__animated animate__fadeInUp" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                    <div className="d-flex align-items-center bg-dark p-4 rounded-4 shadow border border-secondary border-opacity-25">
+                                        <div className="text-black p-3 rounded-3 fw-bold me-4 h2 mb-0" style={{ backgroundColor: ORANGE_COLOR, minWidth: "110px", textAlign: "center" }}>
+                                            {new Date(e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
+                                        </div>
+                                        <div className="h3 fw-bold text-white mb-0">{e.title}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        )) : <h2 className="text-secondary text-center mt-5">Nincs rögzített havi esemény.</h2>}
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* ALSÓ SÁV - NARANCS */}
-            <div className="position-absolute bottom-0 w-100 p-4 bg-dark-soft d-flex justify-content-between align-items-center border-top border-orange-low">
-                <div className="h4 m-0 fw-bold" style={{ color: "#ff6600" }}>INFOSCREEN <span className="text-white mx-2">|</span> DIÁK KIJELZŐ</div>
-                <div className="h2 m-0 fw-bold" style={{ color: "#ff6600" }}>
-                    {new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
-                </div>
+                <footer className="w-100 p-4 d-flex justify-content-between align-items-center mt-auto" style={{ borderTop: "1px solid #333" }}>
+                    <div className="h3 m-0 fw-bold">
+                        <span style={{ color: ORANGE_COLOR }}>INFO</span>SCREEN <span className="text-secondary opacity-50 mx-2">|</span> <span className="text-secondary fw-light h4">DIÁK</span>
+                    </div>
+                    <div className="text-end">
+                        <div className="display-4 m-0 fw-bold" style={{ color: ORANGE_COLOR }}>
+                            {new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="h5 text-secondary mb-0">
+                            {new Date().toLocaleDateString('hu-HU', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                    </div>
+                </footer>
             </div>
         </div>
     );

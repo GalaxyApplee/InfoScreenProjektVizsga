@@ -3,31 +3,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&display=swap');
 @import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css');
 
-/* Reset és alap stílusok
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --primary-color: #eb25ca;
-  --secondary-color: #64748b;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --bg-color: #f8fafc;
-  --text-color: #1e293b;
-  --border-color: #e2e8f0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--bg-color);
-}
-
 /* Layout */
 .layout {
   min-height: 100vh;
@@ -567,5 +542,39 @@ a.text-decoration-none:hover {
 .custom-input-orange:focus {
     border-color: #ff6600 !important;
     box-shadow: 0 0 10px rgba(255, 102, 0, 0.3) !important;
+}
+
+/* Az input mezők alapstílusa */
+.custom-input {
+    background-color: #000 !important;
+    border-color: #333 !important;
+    color: #fff !important;
+}
+
+/* Fókusz állapot (amikor belekatintasz) */
+.custom-input:focus {
+    background-color: #000 !important;
+    border-color: #ff6600 !important;
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.2) !important;
+    color: #fff !important;
+}
+
+/* A PLACEHOLDER SZÍNE ÉS LÁTHATÓSÁGA */
+.custom-input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important; /* Középszürke/fehér, jól látható */
+    font-size: 0.9rem;
+}
+
+/* Narancssárga gomb effekt */
+.btn-orange-glow {
+    background-color: #ff6600 !important;
+    color: #000 !important;
+    border: none !important;
+    transition: all 0.3s ease;
+}
+
+.btn-orange-glow:hover {
+    box-shadow: 0 0 20px rgba(255, 102, 0, 0.4) !important;
+    transform: translateY(-2px);
 }
 

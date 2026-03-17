@@ -14,17 +14,10 @@ function Events() {
 
     const handleLogout = async (e) => {
         if (e) e.preventDefault();
-        
         if (window.confirm("Biztosan ki szeretnél jelentkezni?")) {
             try {
-                // Megvárjuk a kijelentkezést (ha aszinkron lenne)
                 await logout(); 
-                
-                // Kényszerített navigáció tiszta állapottal
                 navigate("/login", { replace: true });
-                
-                // Extra biztonság: az oldal teljes újratöltése a loginon
-                // Ez kiüríti a maradék memóriát is
                 window.location.reload();
             } catch (err) {
                 console.error("Hiba a kijelentkezéskor:", err);
@@ -52,9 +45,7 @@ function Events() {
         try {
             const response = await fetch("http://localhost:3000/posts", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(eventData)
             });
 
@@ -73,187 +64,131 @@ function Events() {
     };
 
     return (
-        <div className="container-fluid DashBoardBG" style={{ minHeight: "100vh", backgroundColor: "#000", color: "white" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "#000", color: "#fff" }}>
+            <div className="container-fluid p-0">
+                <div className="row g-0">
 
-            <style>
-                {`
-                input[type="date"]{
-                    color-scheme: dark !important;
-                    background-color:#000 !important;
-                    color:#fff !important;
-                    border:1px solid #444 !important;
-                    padding:10px !important;
-                }
-
-                .custom-input:focus{
-                    background-color:#111 !important;
-                    border-color:#ff6600 !important;
-                    color:white !important;
-                    box-shadow:0 0 0 0.25rem rgba(255,102,0,0.25) !important;
-                    outline:none !important;
-                }
-
-                .btn-orange{
-                    background-color:#ff6600;
-                    color:#000;
-                    transition:0.3s;
-                }
-
-
-                
-                `}
-            </style>
-
-            <div className="row">
-
-                {/* SIDEBAR */}
-                <nav id="sidebar" className="col-md-3 col-lg-2 d-md-block sidebar shadow d-flex flex-column justify-content-between">
+                    {/* SIDEBAR */}
+                    <nav id="sidebar" className="col-md-3 col-lg-2 d-md-block sidebar shadow d-flex flex-column justify-content-between" style={{ position: "fixed", height: "100vh", backgroundColor: "#0a0a0a", zIndex: 1000 }}>
                         <div>
                             <div className="sidebar-header text-center py-4">
                                 <img src={kepem} alt="Logo" width="100" height="50" className="rotate-45" />
                             </div>
                             <ul className="nav flex-column px-3">
-                                <li className="nav-item">
+                                <li className="nav-item mb-2">
                                     <Link className="nav-link OrangeText" to="/dashboard">
                                         <i className="bi bi-house-door me-2"></i> Vezérlőpult
                                     </Link>
                                 </li>
-                                <li className="nav-item">
+                                <li className="nav-item mb-2">
                                     <Link className="nav-link OrangeText" to="/newmessage">
                                         <i className="bi bi-chat-dots me-2"></i> Új üzenet
                                     </Link>
                                 </li>
-                                <li className="nav-item">
+                                <li className="nav-item mb-2">
                                     <Link className="nav-link active-orangeSidebar" to="/events">
                                         <i className="bi bi-calendar-event me-2"></i> Események
+                                    </Link>
+                                </li>
+                                {/* VISSZARAKOTT FIÓK BEÁLLÍTÁSOK GOMB */}
+                                <li className="nav-item mb-2">
+                                    <Link className="nav-link OrangeText" to="/settings">
+                                        <i className="bi bi-person-gear me-2"></i> Fiók beállítások
                                     </Link>
                                 </li>
                             </ul>
                         </div>
 
-                        {/* KIJELENTKEZÉS GOMB */}
                         <div className="px-3 pb-4">
-                            <button 
-                                type="button" 
-                                onClick={handleLogout}
-                                className="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center"
-                            >
+                            <div className="small text-secondary mb-3 text-center border-top border-secondary pt-3">
+                                Belépve: <span className="text-white fw-bold">{user?.username}</span>
+                            </div>
+                            <button onClick={handleLogout} className="btn btn-outline-danger w-100 border-0">
                                 <i className="bi bi-box-arrow-right me-2"></i> Kijelentkezés
                             </button>
                         </div>
                     </nav>
 
+                    {/* FŐ TARTALOM */}
+                    <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                        <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+                            <h2 className="h4 text-secondary m-0">Új esemény beküldése</h2>
+                            <span className="text-secondary small">
+                                Üdv, <strong className="text-orange">{user?.username || "Admin"}!</strong>
+                            </span>
+                        </header>
 
-                {/* FŐ TARTALOM */}
-                <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                        <div className="row justify-content-start">
+                            <div className="col-lg-6">
+                                <div className="card bg-dark border-secondary p-4 shadow">
+                                    <form onSubmit={handleSaveEvent}>
+                                        
+                                        <div className="mb-3">
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Esemény neve</label>
+                                            <input
+                                                type="text"
+                                                className="form-control bg-black text-white border-secondary custom-input py-2"
+                                                value={eventTitle}
+                                                onChange={(e) => setEventTitle(e.target.value)}
+                                                placeholder="Pl: Matek verseny vagy Iskolanap"
+                                            />
+                                        </div>
 
-                    <header className="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom border-secondary">
-                        <h2 className="h4 text-secondary">Új esemény beküldése</h2>
-                        <span className="navbar-text text-secondary">
-                            Üdv, <strong className="text-orange">{user?.username || "Admin"}!</strong>
-                        </span>
-                    </header>
+                                        <div className="mb-3">
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Dátum kiválasztása</label>
+                                            <input
+                                                type="date"
+                                                className="form-control bg-black text-white border-secondary custom-input py-2"
+                                                style={{ colorScheme: "dark" }}
+                                                value={eventDate}
+                                                onChange={(e) => setEventDate(e.target.value)}
+                                            />
+                                        </div>
 
+                                        <div className="mb-3">
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Célcsoport</label>
+                                            <select
+                                                className="form-select bg-black text-white border-secondary custom-input py-2"
+                                                value={target}
+                                                onChange={(e) => setTarget(e.target.value)}
+                                            >
+                                                <option value="student">Diákok (Folyosói kijelzők)</option>
+                                                <option value="teacher">Tanárok (Tanári szoba)</option>
+                                            </select>
+                                        </div>
 
-                    <div className="row">
-                        <div className="col-lg-6 col-md-8">
+                                        <div className="mb-4">
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Részletek (Opcionális)</label>
+                                            <textarea
+                                                className="form-control bg-black text-white border-secondary custom-input"
+                                                rows="4"
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                placeholder="További információk az eseményről..."
+                                                style={{ resize: "none" }}
+                                            ></textarea>
+                                        </div>
 
-                            <div className="card bg-dark border-secondary p-4 shadow-lg">
-
-                                <form onSubmit={handleSaveEvent}>
-
-                                    {/* ESEMÉNY NEVE */}
-                                    <div className="mb-3">
-                                        <label className="form-label text-orange fw-bold small">
-                                            ESEMÉNY NEVE
-                                        </label>
-
-                                        <input
-                                            type="text"
-                                            className="form-control bg-black text-white border-secondary custom-input py-2"
-                                            value={eventTitle}
-                                            onChange={(e) => setEventTitle(e.target.value)}
-                                            placeholder="Pl: Matek verseny"
-                                        />
-                                    </div>
-
-
-                                    {/* DÁTUM */}
-                                    <div className="mb-3">
-                                        <label className="form-label text-orange fw-bold small">
-                                            DÁTUM KIVÁLASZTÁSA
-                                        </label>
-
-                                        <input
-                                            type="date"
-                                            className="form-control bg-black text-white border-secondary custom-input"
-                                            value={eventDate}
-                                            onChange={(e) => setEventDate(e.target.value)}
-                                            max={"2040-01-01"}
-                                        />
-                                    </div>
-
-
-                                    {/* CÉLCSOPORT */}
-                                    <div className="mb-3">
-
-                                        <label className="form-label text-orange fw-bold small">
-                                            CÉLCSOPORT
-                                        </label>
-
-                                        <select
-                                            className="form-select bg-black text-white border-secondary custom-input py-2"
-                                            value={target}
-                                            onChange={(e) => setTarget(e.target.value)}
-                                        >
-                                            <option value="student">
-                                                Diákok (Heti/Havi terv)
-                                            </option>
-
-                                            <option value="teacher">
-                                                Tanárok (Értekezletek)
-                                            </option>
-                                        </select>
-
-                                    </div>
-
-
-                                    {/* LEÍRÁS */}
-                                    <div className="mb-4">
-
-                                        <label className="form-label text-orange fw-bold small">
-                                            RÉSZLETEK (OPCIONÁLIS)
-                                        </label>
-
-                                        <textarea
-                                            className="form-control bg-black text-white border-secondary custom-input"
-                                            rows="3"
-                                            value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
-                                            placeholder="Esemény rövid leírása..."
-                                            style={{ resize: "none" }}
-                                        ></textarea>
-
-                                    </div>
-
-
-                                    {/* GOMB */}
-                                    <button
-                                        type="submit"
-                                        className="btn btn-orange w-100 fw-bold py-2 shadow border-0"
-                                    >
-                                        ESEMÉNY MENTÉSE
-                                    </button>
-
-                                </form>
-
+                                        <button type="submit" className="btn btn-orange-glow w-100 fw-bold py-3 text-white">
+                                            <i className="bi bi-calendar-check me-2 text-white"></i> ESEMÉNY RÖGZÍTÉSE
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-
+                            
+                            {/* SEGÍTSÉG KÁRTYA */}
+                            <div className="col-lg-4">
+                                <div className="p-4 border border-secondary rounded bg-black h-100">
+                                    <h5 className="text-orange fw-bold"><i className="bi bi-info-circle me-2"></i> Tudnivalók</h5>
+                                    <ul className="text-secondary small mt-3 px-3">
+                                        <li className="mb-2">Az események automatikusan megjelennek a naptár nézetben.</li>
+                                        <li className="mb-2">A "Tanári" célcsoport eseményei csak a tanári szobai kijelzőn látszanak.</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                </main>
-
+                    </main>
+                </div>
             </div>
         </div>
     );
