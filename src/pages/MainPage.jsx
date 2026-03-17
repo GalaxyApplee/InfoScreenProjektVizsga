@@ -46,16 +46,16 @@ export default function MainPage(){
         
         <ul className="navbar-nav mx-auto text-center gap-4 gap-xxl-5">
           <li className="nav-item">
-            <a className="nav-link  fw-bold NavBarTextActive montserrat" href="#">Főoldal</a>
+            <a className="nav-link  fw-bold NavBarTextActive montserrat" href="#fooldal">Főoldal</a>
           </li>
           <li className="nav-item">
-            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#">Mi az?</a>
+            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#miaz">Mi az?</a>
           </li>
           <li className="nav-item">
-            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#">Rólunk</a>
+            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#rolunk">Rólunk</a>
           </li>
           <li className="nav-item">
-            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#">Elérhetőség</a>
+            <a className="nav-link  fw-bold NavBarCenterText montserrat" href="#elerhetoseg">Elérhetőség</a>
           </li>
         </ul>
 
@@ -78,7 +78,7 @@ export default function MainPage(){
   </nav>
 
   
-  <section className="py-5 py-md-8 text-center">
+  <section className="py-5 py-md-8 text-center" id='fooldal'>
     <div className="container">
       <h1 className="CenterText fw-black mb-4">
         InfoScreen – Minden infó<br/>egy helyen, zseb nélkül!
@@ -104,11 +104,11 @@ export default function MainPage(){
   </section>
 
   
-  <section className="py-5 bg-dark">
+  <section className="py-5 bg-dark" id='miaz'>
     <div className="container">
       <div className="row align-items-center gy-5 flex-lg-row-reverse">
         <div className="col-lg-6">
-          <h2 className="fw-bold display-5 mb-4">Mi az InfoScreen? Mire képes?</h2>
+          <h2 className="fw-bold display-5 mb-4 " >Mi az InfoScreen? Mire képes?</h2>
           <p className="OrangeText fs-5 lh-lg">
             Az InfoScreen egy <strong>új generációs</strong>, webalapú információátadó rendszer.<br/>
             Friss üzenetek, hírek, események, időjárás, órarend – bármi, amit szeretnél megjeleníteni.
@@ -137,7 +137,7 @@ export default function MainPage(){
   <div className="OrangeBackColor mx-auto"></div>
 
   
-  <section className="py-5 text-center">
+  <section className="py-5 text-center"  id='rolunk'>
     <div className="container">
       <h2 className="WhiteCenterText display-4 fw-bold mb-5">Kik vagyunk?</h2>
       <p className="OrangeCenterText fs-4 mx-auto" style={{"maxWidth": "900px"}}>
@@ -152,7 +152,7 @@ export default function MainPage(){
   
   <footer className="bg-dark py-5 mt-5">
     <div className="container text-center text-white">
-      <h3 className="fs-3 fw-bold mb-4" style={{"color": "#fe7320"}}>Elérhetőségeink</h3>
+      <h3 className="fs-3 fw-bold mb-4" style={{"color": "#fe7320"}} id='elerhetoseg'>Elérhetőségeink</h3>
       
       <div className="row justify-content-center g-4">
         <div className="col-md-4">
