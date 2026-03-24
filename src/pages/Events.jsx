@@ -11,6 +11,7 @@ function Events() {
     const [eventDate, setEventDate] = useState("");
     const [description, setDescription] = useState("");
     const [target, setTarget] = useState("student");
+    const [eventType, setEventType] = useState("weekly");
 
     const handleLogout = async (e) => {
         if (e) e.preventDefault();
@@ -18,7 +19,6 @@ function Events() {
             try {
                 await logout(); 
                 navigate("/login", { replace: true });
-                window.location.reload();
             } catch (err) {
                 console.error("Hiba a kijelentkezéskor:", err);
             }
@@ -33,10 +33,26 @@ function Events() {
             return;
         }
 
+        const start = new Date(eventDate);
+        let end = new Date(eventDate);
+
+        // --- OKOS VÉGDÁTUM LOGIKA ---
+        if (eventType === "weekly") {
+            // HETI: 7 nap múlva jár le
+            end.setDate(start.getDate() + 7);
+        } else if (eventType === "monthly") {
+            // HAVI: Az adott hónap utolsó napja (23:59:59)
+            // A '0' nap a következő hónapban az előző hónap utolsó napját jelenti
+            end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+            end.setHours(23, 59, 59, 999);
+        }
+
         const eventData = {
             title: eventTitle,
             body: description,
-            date: new Date(eventDate).toISOString(),
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+            type: eventType,
             active: true,
             target: target,
             userId: user?.id || 1
@@ -50,7 +66,8 @@ function Events() {
             });
 
             if (response.ok) {
-                alert("Esemény sikeresen rögzítve!");
+                const formatEnd = end.toLocaleDateString('hu-HU');
+                alert(`Esemény rögzítve! Lejárat: ${formatEnd}`);
                 setEventTitle("");
                 setEventDate("");
                 setDescription("");
@@ -90,7 +107,6 @@ function Events() {
                                         <i className="bi bi-calendar-event me-2"></i> Események
                                     </Link>
                                 </li>
-                                {/* VISSZARAKOTT FIÓK BEÁLLÍTÁSOK GOMB */}
                                 <li className="nav-item mb-2">
                                     <Link className="nav-link OrangeText" to="/settings">
                                         <i className="bi bi-person-gear me-2"></i> Fiók beállítások
@@ -112,7 +128,7 @@ function Events() {
                     {/* FŐ TARTALOM */}
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                         <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-                            <h2 className="h4 text-secondary m-0">Új esemény beküldése</h2>
+                            <h2 className="h4 text-secondary m-0">Esemény rögzítése</h2>
                             <span className="text-secondary small">
                                 Üdv, <strong className="text-orange">{user?.username || "Admin"}!</strong>
                             </span>
@@ -124,25 +140,38 @@ function Events() {
                                     <form onSubmit={handleSaveEvent}>
                                         
                                         <div className="mb-3">
-                                            <label className="form-label text-orange fw-bold small text-uppercase">Esemény neve</label>
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Esemény megnevezése</label>
                                             <input
                                                 type="text"
                                                 className="form-control bg-black text-white border-secondary custom-input py-2"
                                                 value={eventTitle}
                                                 onChange={(e) => setEventTitle(e.target.value)}
-                                                placeholder="Pl: Matek verseny vagy Iskolanap"
+                                                placeholder="Pl: Iskolai bál"
                                             />
                                         </div>
 
-                                        <div className="mb-3">
-                                            <label className="form-label text-orange fw-bold small text-uppercase">Dátum kiválasztása</label>
-                                            <input
-                                                type="date"
-                                                className="form-control bg-black text-white border-secondary custom-input py-2"
-                                                style={{ colorScheme: "dark" }}
-                                                value={eventDate}
-                                                onChange={(e) => setEventDate(e.target.value)}
-                                            />
+                                        <div className="row">
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label text-orange fw-bold small text-uppercase">Hirdetés típusa</label>
+                                                <select 
+                                                    className="form-select bg-black text-white border-secondary custom-input py-2"
+                                                    value={eventType}
+                                                    onChange={(e) => setEventType(e.target.value)}
+                                                >
+                                                    <option value="weekly">Heti (7 napig)</option>
+                                                    <option value="monthly">Havi (Hónap végéig)</option>
+                                                </select>
+                                            </div>
+                                            <div className="col-md-6 mb-3">
+                                                <label className="form-label text-orange fw-bold small text-uppercase">Kezdő dátum</label>
+                                                <input
+                                                    type="date"
+                                                    className="form-control bg-black text-white border-secondary custom-input py-2"
+                                                    style={{ colorScheme: "dark" }}
+                                                    value={eventDate}
+                                                    onChange={(e) => setEventDate(e.target.value)}
+                                                />
+                                            </div>
                                         </div>
 
                                         <div className="mb-3">
@@ -152,37 +181,37 @@ function Events() {
                                                 value={target}
                                                 onChange={(e) => setTarget(e.target.value)}
                                             >
-                                                <option value="student">Diákok (Folyosói kijelzők)</option>
-                                                <option value="teacher">Tanárok (Tanári szoba)</option>
+                                                <option value="student">Diákok</option>
+                                                <option value="teacher">Tanárok</option>
                                             </select>
                                         </div>
 
                                         <div className="mb-4">
-                                            <label className="form-label text-orange fw-bold small text-uppercase">Részletek (Opcionális)</label>
+                                            <label className="form-label text-orange fw-bold small text-uppercase">Leírás</label>
                                             <textarea
                                                 className="form-control bg-black text-white border-secondary custom-input"
-                                                rows="4"
+                                                rows="3"
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
-                                                placeholder="További információk az eseményről..."
+                                                placeholder="Rövid tájékoztató..."
                                                 style={{ resize: "none" }}
                                             ></textarea>
                                         </div>
 
                                         <button type="submit" className="btn btn-orange-glow w-100 fw-bold py-3 text-white">
-                                            <i className="bi bi-calendar-check me-2 text-white"></i> ESEMÉNY RÖGZÍTÉSE
+                                            <i className="bi bi-calendar-check me-2 text-white"></i> ESEMÉNY BEKÜLDÉSE
                                         </button>
                                     </form>
                                 </div>
                             </div>
-                            
-                            {/* SEGÍTSÉG KÁRTYA */}
+
                             <div className="col-lg-4">
                                 <div className="p-4 border border-secondary rounded bg-black h-100">
-                                    <h5 className="text-orange fw-bold"><i className="bi bi-info-circle me-2"></i> Tudnivalók</h5>
+                                    <h5 className="text-orange fw-bold"><i className="bi bi-clock-history me-2"></i> Automata lejárat</h5>
                                     <ul className="text-secondary small mt-3 px-3">
-                                        <li className="mb-2">Az események automatikusan megjelennek a naptár nézetben.</li>
-                                        <li className="mb-2">A "Tanári" célcsoport eseményei csak a tanári szobai kijelzőn látszanak.</li>
+                                        <li className="mb-2"><strong>Heti:</strong> A választott dátumtól számított 7 napig látható.</li>
+                                        <li className="mb-2"><strong>Havi:</strong> Az adott naptári hónap végén automatikusan törlődik.</li>
+                                        <li>Így a kijelzőid mindig frissek maradnak manuális törlés nélkül is.</li>
                                     </ul>
                                 </div>
                             </div>

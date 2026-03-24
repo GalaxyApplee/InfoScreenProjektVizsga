@@ -14,26 +14,40 @@ function StudentDisplay() {
     const [popup, setPopup] = useState(null);
     const [progress, setProgress] = useState(0);
 
-    const ORANGE_COLOR = "#ff6600"; // Igazi mély narancssárga
+    const ORANGE_COLOR = "#ff6600";
     const ROTATION_TIME = 12000;
 
+    // --- JAVÍTOTT FETCHDATA SZŰRÉSSEL ---
     const fetchData = async () => {
         try {
+            const now = new Date();
+
+            // 1. Általános hírek szűrése
             const postsRes = await fetch("http://localhost:3000/posts");
             const postsData = await postsRes.json();
-            setMessages(postsData.filter(m => m.target === "student" || m.target === "all"));
+            setMessages(postsData.filter(m => 
+                (m.target === "student" || m.target === "all") &&
+                (!m.endDate || new Date(m.endDate) > now) // Csak ha még érvényes
+            ));
 
-            const now = new Date();
+            // 2. Heti események szűrése
             const oneJan = new Date(now.getFullYear(), 0, 1);
             const weekNum = Math.ceil((((now - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
             
             const weekRes = await fetch(`http://localhost:3000/posts/weeks/${weekNum}`);
             const weekData = await weekRes.json();
-            setWeeklyEvents(weekData.filter(e => e.target === "student" || e.target === "all"));
+            setWeeklyEvents(weekData.filter(e => 
+                (e.target === "student" || e.target === "all") &&
+                (!e.endDate || new Date(e.endDate) > now)
+            ));
 
+            // 3. Havi események szűrése
             const monthRes = await fetch(`http://localhost:3000/posts/months/${now.getMonth() + 1}`);
             const monthData = await monthRes.json();
-            setMonthlyEvents(monthData.filter(e => e.target === "student" || e.target === "all"));
+            setMonthlyEvents(monthData.filter(e => 
+                (e.target === "student" || e.target === "all") &&
+                (!e.endDate || new Date(e.endDate) > now)
+            ));
         } catch (error) {
             console.error("Hiba az adatok letöltésekor:", error);
         }
@@ -61,6 +75,10 @@ function StudentDisplay() {
     useEffect(() => {
         if (isPaired) {
             fetchData();
+
+            // Automatikus frissítés 30 percenként, hogy a lejártak eltűnjenek
+            const autoRefresh = setInterval(fetchData, 1800000);
+
             socket.on("new_post", (newPost) => {
                 if (newPost.target === "student" || newPost.target === "all") {
                     setPopup(newPost);
@@ -70,7 +88,11 @@ function StudentDisplay() {
                     fetchData();
                 }
             });
-            return () => socket.off("new_post");
+
+            return () => {
+                socket.off("new_post");
+                clearInterval(autoRefresh);
+            };
         }
     }, [isPaired]);
 
@@ -98,6 +120,7 @@ function StudentDisplay() {
         return () => { clearInterval(timer); clearInterval(rotationInterval); };
     }, [viewMode, currentIndex, messages, popup, isPaired]);
 
+    // ... (A renderelés/UI rész változatlan marad, mint az előző kódodban)
     if (!isPaired) {
         return (
             <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center">
@@ -132,19 +155,14 @@ function StudentDisplay() {
 
     return (
         <div style={{ backgroundColor: "#000", height: "100vh", color: "white", overflow: "hidden", position: "relative" }}>
-            
-            {/* NARANCSSÁRGA TÖLTŐ CSÍK */}
             <div className="position-absolute top-0 start-0" style={{ width: `${progress}%`, transition: 'width 0.1s linear', zIndex: 10, height: '10px', backgroundColor: ORANGE_COLOR, boxShadow: `0 0 15px ${ORANGE_COLOR}` }}></div>
-
             <div className="container-fluid h-100 d-flex flex-column pt-4">
-                
                 {viewMode === 'messages' && (
                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center animate__animated animate__fadeIn">
                         {messages.length > 0 ? (
                             <div className="px-5 w-100" style={{ maxWidth: "1500px" }}>
                                 <div style={{ color: ORANGE_COLOR }} className="mb-3 fw-bold tracking-widest text-uppercase h4">Hírek ({currentIndex + 1} / {messages.length})</div>
                                 <h1 className="display-1 fw-bold mb-5 text-white" style={{ fontSize: "5.5rem", textShadow: `0 0 20px ${ORANGE_COLOR}33` }}>{messages[currentIndex].title}</h1>
-                                
                                 <div className="p-5 rounded-5 border border-2 shadow-lg" style={{ backgroundColor: "#080808", borderColor: `${ORANGE_COLOR}66` }}>
                                     <p className="display-2 fw-bold text-white mb-0" style={{ lineHeight: "1.4", wordWrap: "break-word" }}>
                                         {messages[currentIndex].body}
@@ -158,7 +176,6 @@ function StudentDisplay() {
                         )}
                     </div>
                 )}
-
                 {viewMode === 'weekly' && (
                     <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
                         <h1 className="display-3 fw-bold mb-5 border-bottom pb-3" style={{ color: ORANGE_COLOR, borderColor: ORANGE_COLOR }}><i className="bi bi-calendar3 me-3"></i>HETI REND</h1>
@@ -167,7 +184,7 @@ function StudentDisplay() {
                                 <div key={e.id} className="col-12 animate__animated animate__fadeInLeft" style={{ animationDelay: `${idx * 0.1}s` }}>
                                     <div className="d-flex align-items-center p-4 bg-dark rounded-4 border-start border-5 shadow" style={{ borderLeftColor: ORANGE_COLOR }}>
                                         <div className="h1 fw-bold mb-0 me-5" style={{ minWidth: "250px", color: ORANGE_COLOR }}>
-                                            {new Date(e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
+                                            {new Date(e.startDate || e.date).toLocaleDateString('hu-HU', { weekday: 'long' }).toUpperCase()}
                                         </div>
                                         <div className="h1 fw-bold text-white mb-0">{e.title}</div>
                                     </div>
@@ -176,7 +193,6 @@ function StudentDisplay() {
                         </div>
                     </div>
                 )}
-
                 {viewMode === 'monthly' && (
                     <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
                         <h1 className="display-3 fw-bold mb-5 border-bottom pb-3" style={{ color: ORANGE_COLOR, borderColor: ORANGE_COLOR }}><i className="bi bi-calendar-check me-3"></i>HAVI TERV</h1>
@@ -185,7 +201,7 @@ function StudentDisplay() {
                                 <div key={e.id} className="col-6 animate__animated animate__fadeInUp" style={{ animationDelay: `${idx * 0.1}s` }}>
                                     <div className="d-flex align-items-center bg-dark p-4 rounded-4 shadow border border-secondary border-opacity-25">
                                         <div className="text-black p-3 rounded-3 fw-bold me-4 h2 mb-0" style={{ backgroundColor: ORANGE_COLOR, minWidth: "110px", textAlign: "center" }}>
-                                            {new Date(e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
+                                            {new Date(e.startDate || e.date).toLocaleDateString('hu-HU', { day: 'numeric', month: 'short' })}
                                         </div>
                                         <div className="h3 fw-bold text-white mb-0">{e.title}</div>
                                     </div>
@@ -194,7 +210,6 @@ function StudentDisplay() {
                         </div>
                     </div>
                 )}
-
                 <footer className="w-100 p-4 d-flex justify-content-between align-items-center mt-auto" style={{ borderTop: "1px solid #333" }}>
                     <div className="h3 m-0 fw-bold">
                         <span style={{ color: ORANGE_COLOR }}>INFO</span>SCREEN <span className="text-secondary opacity-50 mx-2">|</span> <span className="text-secondary fw-light h4">DIÁK</span>

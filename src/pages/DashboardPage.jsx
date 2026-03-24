@@ -10,10 +10,22 @@ function DashboardPage() {
     const [displays, setDisplays] = useState([]);
     const [isServerOnline, setIsServerOnline] = useState(true);
 
-    // Modal állapota
+    // Modal állapotok - Kijelzőhöz
     const [showModal, setShowModal] = useState(false);
     const [newName, setNewName] = useState("");
     const [newType, setNewType] = useState("student");
+
+    // MODOSÍTVA: Bővített állapot az üzenet szerkesztéséhez
+    const [showEditPostModal, setShowEditPostModal] = useState(false);
+    const [editingPost, setEditingPost] = useState({ 
+        id: null, 
+        title: "", 
+        body: "",
+        target: "student", 
+        type: "simple", 
+        startDate: "", 
+        endDate: "" 
+    });
 
     const fetchData = async () => {
         try {
@@ -21,7 +33,6 @@ function DashboardPage() {
             const dRes = await fetch("http://localhost:3000/displays");
             if (pRes.ok && dRes.ok) {
                 setPosts(await pRes.json());
-                setDisplays(await dRes.json());
                 setIsServerOnline(true);
             } else { setIsServerOnline(false); }
         } catch (err) { setIsServerOnline(false); }
@@ -47,6 +58,47 @@ function DashboardPage() {
                 fetchData();
             }
         } catch (err) { alert("Hiba a mentésnél!"); }
+    };
+
+    // JAVÍTVA: Szerkesztés megnyitása minden adattal
+    const handleEditClick = (post) => {
+        setEditingPost({ 
+            id: post.id, 
+            title: post.title, 
+            body: post.body || "",
+            target: post.target,
+            type: post.type || "simple",
+            // A dátumokat le kell vágni YYYY-MM-DD formátumra az inputhoz
+            startDate: post.startDate ? post.startDate.split('T')[0] : "",
+            endDate: post.endDate ? post.endDate.split('T')[0] : ""
+        });
+        setShowEditPostModal(true);
+    };
+
+    // JAVÍTVA: Szerkesztett üzenet mentése (Már küldi a dátumokat és típust is)
+    const handleUpdatePost = async () => {
+        try {
+            const res = await fetch(`http://localhost:3000/posts/${editingPost.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    title: editingPost.title, 
+                    body: editingPost.body,
+                    target: editingPost.target,
+                    type: editingPost.type,
+                    startDate: editingPost.startDate,
+                    endDate: editingPost.endDate || null // Ha üres, küldjünk null-t
+                })
+            });
+            if (res.ok) {
+                setShowEditPostModal(false);
+                fetchData();
+            } else {
+                alert("Hiba történt a szerkesztés során.");
+            }
+        } catch (err) {
+            alert("Hálózati hiba a mentésnél!");
+        }
     };
 
     const handleDeletePost = async (id) => {
@@ -94,7 +146,6 @@ function DashboardPage() {
                                         <i className="bi bi-calendar-event me-2"></i> Események
                                     </Link>
                                 </li>
-                                {/* VISSZARAKOTT FIÓK BEÁLLÍTÁSOK GOMB */}
                                 <li className="nav-item mb-2">
                                     <Link className="nav-link OrangeText" to="/settings">
                                         <i className="bi bi-person-gear me-2"></i> Fiók beállítások
@@ -103,7 +154,6 @@ function DashboardPage() {
                             </ul>
                         </div>
 
-                        {/* ALSÓ RÉSZ: USER INFO ÉS LOGOUT */}
                         <div className="px-3 pb-4">
                             <div className="small text-secondary mb-3 text-center border-top border-secondary pt-3">
                                 Belépve: <span className="text-white fw-bold">{user?.username}</span>
@@ -119,7 +169,7 @@ function DashboardPage() {
                         <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
                             <div>
                                 <h2 className="h4 text-white m-0">Vezérlőpult</h2>
-                                <p className="text-secondary small m-0">Üdvözöljük, {user?.name}!</p>
+                                <p className="text-secondary small m-0">Üdvözöljük, {user?.username}!</p>
                             </div>
                             <span className={`badge ${isServerOnline ? 'bg-success' : 'bg-danger'}`}>
                                 {isServerOnline ? 'SERVER ONLINE' : 'SERVER OFFLINE'}
@@ -162,6 +212,7 @@ function DashboardPage() {
                                     <thead>
                                         <tr className="text-secondary small border-secondary">
                                             <th className="ps-4">CÍM</th>
+                                            <th>TÍPUS</th>
                                             <th>CÉLCSOPORT</th>
                                             <th className="text-end pe-4">MŰVELET</th>
                                         </tr>
@@ -171,11 +222,17 @@ function DashboardPage() {
                                             <tr key={p.id} className="align-middle border-secondary">
                                                 <td className="ps-4 fw-bold" style={{ color: "#ff6600" }}>{p.title}</td>
                                                 <td>
+                                                    <small className="text-secondary">{p.type === 'simple' ? 'Szimpla' : p.type === 'weekly' ? 'Heti' : 'Havi'}</small>
+                                                </td>
+                                                <td>
                                                     <span className={`badge border ${p.target === 'teacher' ? 'border-warning text-warning' : 'border-primary text-primary'}`}>
                                                         {p.target?.toUpperCase()}
                                                     </span>
                                                 </td>
                                                 <td className="text-end pe-4">
+                                                    <button onClick={() => handleEditClick(p)} className="btn btn-link text-info p-0 me-3">
+                                                        <i className="bi bi-pencil-square fs-5"></i>
+                                                    </button>
                                                     <button onClick={() => handleDeletePost(p.id)} className="btn btn-link text-danger p-0">
                                                         <i className="bi bi-trash-fill fs-5"></i>
                                                     </button>
@@ -183,7 +240,7 @@ function DashboardPage() {
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan="3" className="text-center py-4 text-secondary">Nincsenek megjeleníthető üzenetek.</td>
+                                                <td colSpan="4" className="text-center py-4 text-secondary">Nincsenek megjeleníthető üzenetek.</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -194,7 +251,7 @@ function DashboardPage() {
                 </div>
             </div>
 
-            {/* MODAL AZ ÚJ KIJELZŐHÖZ */}
+            {/* MODAL AZ ÚJ KIJELZŐHÖZ - Változatlan */}
             {showModal && (
                 <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000 }}>
                     <div className="card bg-dark border-secondary p-4 shadow-lg" style={{ width: "380px" }}>
@@ -207,6 +264,65 @@ function DashboardPage() {
                         <div className="d-flex gap-2">
                             <button onClick={() => setShowModal(false)} className="btn btn-secondary flex-fill">Mégse</button>
                             <button onClick={handleSaveDisplay} className="btn btn-orange-glow flex-fill fw-bold">Kód generálása</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* JAVÍTVA: BŐVÍTETT MODAL AZ ÜZENET SZERKESZTÉSÉHEZ */}
+            {showEditPostModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000 }}>
+                    <div className="card bg-dark border-secondary p-4 shadow-lg" style={{ width: "550px", maxHeight: "90vh", overflowY: "auto" }}>
+                        <h5 className="text-orange fw-bold mb-4 text-center text-uppercase">Üzenet részletes szerkesztése</h5>
+                        
+                        <div className="mb-3">
+                            <label className="text-secondary small mb-1">Üzenet címe</label>
+                            <input type="text" className="form-control bg-black border-secondary text-white" 
+                                value={editingPost.title} onChange={(e) => setEditingPost({...editingPost, title: e.target.value})} />
+                        </div>
+
+                        <div className="mb-3">
+                            <label className="text-secondary small mb-1">Üzenet tartalma (body)</label>
+                            <textarea className="form-control bg-black border-secondary text-white" rows="3"
+                                value={editingPost.body} onChange={(e) => setEditingPost({...editingPost, body: e.target.value})}></textarea>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-6 mb-3">
+                                <label className="text-secondary small mb-1">Üzenet típusa</label>
+                                <select className="form-select bg-black border-secondary text-white" 
+                                    value={editingPost.type} onChange={(e) => setEditingPost({...editingPost, type: e.target.value})}>
+                                    <option value="simple">Szimpla üzenet</option>
+                                    <option value="weekly">Heti hirdetés</option>
+                                    <option value="monthly">Havi hirdetés</option>
+                                </select>
+                            </div>
+                            <div className="col-md-6 mb-3">
+                                <label className="text-secondary small mb-1">Célcsoport</label>
+                                <select className="form-select bg-black border-secondary text-white" 
+                                    value={editingPost.target} onChange={(e) => setEditingPost({...editingPost, target: e.target.value})}>
+                                    <option value="student">DIÁKOK</option>
+                                    <option value="teacher">TANÁRI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-6 mb-3">
+                                <label className="text-secondary small mb-1">Megjelenés kezdete</label>
+                                <input type="date" className="form-control bg-black border-secondary text-white" 
+                                    value={editingPost.startDate} onChange={(e) => setEditingPost({...editingPost, startDate: e.target.value})} />
+                            </div>
+                            <div className="col-md-6 mb-3">
+                                <label className="text-secondary small mb-1">Lejárat dátuma</label>
+                                <input type="date" className="form-control bg-black border-secondary text-white" 
+                                    value={editingPost.endDate} onChange={(e) => setEditingPost({...editingPost, endDate: e.target.value})} />
+                            </div>
+                        </div>
+
+                        <div className="d-flex gap-2 pt-3">
+                            <button onClick={() => setShowEditPostModal(false)} className="btn btn-secondary flex-fill">Mégse</button>
+                            <button onClick={handleUpdatePost} className="btn btn-orange-glow flex-fill fw-bold">Mentés</button>
                         </div>
                     </div>
                 </div>
