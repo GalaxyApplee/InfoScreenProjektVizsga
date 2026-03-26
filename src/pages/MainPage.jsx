@@ -4,8 +4,8 @@ import { Link, useNavigate } from "react-router";
 export default function MainPage(){
     const navigate = useNavigate();
     const handleLoginClick = () => {
-        navigate('/login');          // vagy '/login'
-        // navigate('/bejelentkezes', { replace: true });  ← ha nem akarod a vissza gombot
+        navigate('/login');
+
     };
 
     return(

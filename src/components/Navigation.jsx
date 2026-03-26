@@ -10,7 +10,7 @@ function Navigation() {
  const handleLogout = async () => {
     if (window.confirm("Biztosan ki szeretnél jelentkezni?")) {
       await logout();
-      navigate("/login"); // Navigáció a komponensben történik!
+      navigate("/login"); 
     }
   };
 

@@ -15,12 +15,12 @@ function DisplayEntryPage() {
         setError("");
 
         try {
-            // Szimulált vagy valós API hívás a kód ellenőrzésére
+            
             const res = await fetch(`http://localhost:3000/displays/verify/${code}`);
             const data = await res.json();
 
             if (res.ok) {
-                // Eltárolhatjuk localstorage-ba, hogy a kijelző "párosítva" van
+                
                 localStorage.setItem("display_token", data.token || "paired");
                 
                 if (data.type === "student") {
@@ -30,7 +30,7 @@ function DisplayEntryPage() {
                 }
             } else {
                 setError("Érvénytelen vagy lejárt párosítási kód!");
-                setCode(""); // Hibás kód esetén ürítjük
+                setCode(""); 
             }
         } catch (err) {
             setError("Hálózati hiba. Ellenőrizd a szerver kapcsolatot!");

@@ -10,12 +10,12 @@ function DashboardPage() {
     const [displays, setDisplays] = useState([]);
     const [isServerOnline, setIsServerOnline] = useState(true);
 
-    // Modal állapotok - Kijelzőhöz
+    
     const [showModal, setShowModal] = useState(false);
     const [newName, setNewName] = useState("");
     const [newType, setNewType] = useState("student");
 
-    // MODOSÍTVA: Bővített állapot az üzenet szerkesztéséhez
+    
     const [showEditPostModal, setShowEditPostModal] = useState(false);
     const [editingPost, setEditingPost] = useState({ 
         id: null, 
@@ -27,15 +27,25 @@ function DashboardPage() {
         endDate: "" 
     });
 
+    
     const fetchData = async () => {
         try {
             const pRes = await fetch("http://localhost:3000/posts");
             const dRes = await fetch("http://localhost:3000/displays");
+
             if (pRes.ok && dRes.ok) {
-                setPosts(await pRes.json());
+                const postsData = await pRes.json();
+                const displaysData = await dRes.json();
+
+                setPosts(postsData);
+                setDisplays(displaysData);
                 setIsServerOnline(true);
-            } else { setIsServerOnline(false); }
-        } catch (err) { setIsServerOnline(false); }
+            } else { 
+                setIsServerOnline(false); 
+            }
+        } catch (err) { 
+            setIsServerOnline(false); 
+        }
     };
 
     useEffect(() => {
@@ -57,10 +67,11 @@ function DashboardPage() {
                 setShowModal(false);
                 fetchData();
             }
-        } catch (err) { alert("Hiba a mentésnél!"); }
+        } catch (err) { 
+            alert("Hiba a mentésnél!"); 
+        }
     };
 
-    // JAVÍTVA: Szerkesztés megnyitása minden adattal
     const handleEditClick = (post) => {
         setEditingPost({ 
             id: post.id, 
@@ -68,14 +79,12 @@ function DashboardPage() {
             body: post.body || "",
             target: post.target,
             type: post.type || "simple",
-            // A dátumokat le kell vágni YYYY-MM-DD formátumra az inputhoz
             startDate: post.startDate ? post.startDate.split('T')[0] : "",
             endDate: post.endDate ? post.endDate.split('T')[0] : ""
         });
         setShowEditPostModal(true);
     };
 
-    // JAVÍTVA: Szerkesztett üzenet mentése (Már küldi a dátumokat és típust is)
     const handleUpdatePost = async () => {
         try {
             const res = await fetch(`http://localhost:3000/posts/${editingPost.id}`, {
@@ -87,7 +96,7 @@ function DashboardPage() {
                     target: editingPost.target,
                     type: editingPost.type,
                     startDate: editingPost.startDate,
-                    endDate: editingPost.endDate || null // Ha üres, küldjünk null-t
+                    endDate: editingPost.endDate || null 
                 })
             });
             if (res.ok) {
@@ -124,7 +133,7 @@ function DashboardPage() {
             <div className="container-fluid p-0">
                 <div className="row g-0">
                     
-                    {/* SIDEBAR */}
+                    
                     <nav id="sidebar" className="col-md-3 col-lg-2 d-md-block sidebar shadow d-flex flex-column justify-content-between" style={{ position: "fixed", height: "100vh", backgroundColor: "#0a0a0a", zIndex: 1000 }}>
                         <div>
                             <div className="sidebar-header text-center py-4">
@@ -164,7 +173,7 @@ function DashboardPage() {
                         </div>
                     </nav>
 
-                    {/* MAIN CONTENT */}
+                    
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                         <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
                             <div>
@@ -176,7 +185,7 @@ function DashboardPage() {
                             </span>
                         </header>
 
-                        {/* KIJELZŐK SZEKCIÓ */}
+                        
                         <div className="card bg-dark border-secondary mb-5 shadow">
                             <div className="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center py-3">
                                 <h5 className="m-0 text-white fw-bold">AKTÍV KIJELZŐK</h5>
@@ -191,7 +200,7 @@ function DashboardPage() {
                                             <div className="p-3 border border-secondary rounded bg-black text-center position-relative">
                                                 <div className="text-secondary small">{d.name}</div>
                                                 <div className="h4 fw-bold m-0" style={{ color: "#ff6600" }}>{d.pairCode}</div>
-                                                <div className={`badge mt-2 ${d.type === 'student' ? 'text-primary' : 'text-warning'}`}>
+                                                <div className={`badge mt-2 ${d.type === 'student' ? 'text-primary border border-primary' : 'text-warning border border-warning'}`}>
                                                     {d.type.toUpperCase()}
                                                 </div>
                                                 <button onClick={() => deleteDisplay(d.id)} className="btn btn-link text-danger btn-sm position-absolute top-0 end-0">
@@ -204,7 +213,7 @@ function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* ÜZENETEK TÁBLÁZAT */}
+                        
                         <div className="card bg-dark border-secondary shadow">
                             <div className="card-header border-secondary bg-transparent text-white fw-bold py-3 text-uppercase small">Üzenetek kezelése</div>
                             <div className="table-responsive">
@@ -251,7 +260,7 @@ function DashboardPage() {
                 </div>
             </div>
 
-            {/* MODAL AZ ÚJ KIJELZŐHÖZ - Változatlan */}
+            
             {showModal && (
                 <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000 }}>
                     <div className="card bg-dark border-secondary p-4 shadow-lg" style={{ width: "380px" }}>
@@ -263,13 +272,13 @@ function DashboardPage() {
                         </div>
                         <div className="d-flex gap-2">
                             <button onClick={() => setShowModal(false)} className="btn btn-secondary flex-fill">Mégse</button>
-                            <button onClick={handleSaveDisplay} className="btn btn-orange-glow flex-fill fw-bold">Kód generálása</button>
+                            <button onClick={handleSaveDisplay} className="btn btn-orange-glow flex-fill fw-bold text-white">Kód generálása</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* JAVÍTVA: BŐVÍTETT MODAL AZ ÜZENET SZERKESZTÉSÉHEZ */}
+            
             {showEditPostModal && (
                 <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.85)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 3000 }}>
                     <div className="card bg-dark border-secondary p-4 shadow-lg" style={{ width: "550px", maxHeight: "90vh", overflowY: "auto" }}>
@@ -322,7 +331,7 @@ function DashboardPage() {
 
                         <div className="d-flex gap-2 pt-3">
                             <button onClick={() => setShowEditPostModal(false)} className="btn btn-secondary flex-fill">Mégse</button>
-                            <button onClick={handleUpdatePost} className="btn btn-orange-glow flex-fill fw-bold">Mentés</button>
+                            <button onClick={handleUpdatePost} className="btn btn-orange-glow flex-fill fw-bold text-white">Mentés</button>
                         </div>
                     </div>
                 </div>

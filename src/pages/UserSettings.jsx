@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 function UserSettings() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const [loading, setLoading] = useState(false); // Új: a gomb letiltásához mentés közben
+    const [loading, setLoading] = useState(false); 
 
     // Állapotok a formhoz
     const [formData, setFormData] = useState({
@@ -43,7 +43,7 @@ function UserSettings() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    userId: user.id, // A bejelentkezett user azonosítója
+                    userId: user.id, 
                     username: formData.username,
                     email: formData.email,
                     currentPassword: formData.currentPassword,
@@ -56,7 +56,7 @@ function UserSettings() {
             if (response.ok) {
                 alert("Beállítások sikeresen mentve az adatbázisba!");
                 
-                // Ha jelszót is váltott, léptessük ki biztonsági okokból
+                
                 if (formData.newPassword) {
                     alert("A jelszó megváltozott. Kérjük, jelentkezzen be újra!");
                     handleLogout();

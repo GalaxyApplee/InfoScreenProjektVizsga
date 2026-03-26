@@ -36,13 +36,12 @@ function Events() {
         const start = new Date(eventDate);
         let end = new Date(eventDate);
 
-        // --- OKOS VÉGDÁTUM LOGIKA ---
+        
         if (eventType === "weekly") {
-            // HETI: 7 nap múlva jár le
+            
             end.setDate(start.getDate() + 7);
         } else if (eventType === "monthly") {
-            // HAVI: Az adott hónap utolsó napja (23:59:59)
-            // A '0' nap a következő hónapban az előző hónap utolsó napját jelenti
+            
             end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
             end.setHours(23, 59, 59, 999);
         }

@@ -383,7 +383,7 @@
   display: block;
 }
 
-/* Hover javítás linkekhez */
+
 a.text-white:hover,
 a.text-decoration-none:hover {
   color: #fe7320 !important;
@@ -511,7 +511,7 @@ a.text-decoration-none:hover {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-/* A Sidebar aktív linkjét is érdemes kékre állítani a tanárinál */
+
 .active-blueSidebar {
     background-color: var(--electric-blue) !important;
     color: white !important;
@@ -551,7 +551,7 @@ a.text-decoration-none:hover {
     color: #fff !important;
 }
 
-/* Fókusz állapot (amikor belekatintasz) */
+/* Fókusz állapot */
 .custom-input:focus {
     background-color: #000 !important;
     border-color: #ff6600 !important;

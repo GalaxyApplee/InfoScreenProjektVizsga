@@ -11,11 +11,7 @@ import DisplayStudent from "./pages/DisplayStudent";
 import DisplayTeacher from "./pages/DisplayTeacher";
 import DisplayEntryPage from "./pages/DisplayEntryPage";
 
-/**
- * Védett útvonal komponens.
- * Ha nincs bejelentkezve a felhasználó, átirányítja a /login-ra.
- * Ha be van jelentkezve, megjeleníti a gyerek útvonalakat (Outlet).
- */
+
 const ProtectedRoute = () => {
   const { user } = useAuth();
   
@@ -31,7 +27,7 @@ const router = createBrowserRouter([
   // --- NYILVÁNOS ÚTVONALAK ---
   {
     path: "/",
-    element: <MainPage />, // Ez fog betölteni a localhost:5173-on
+    element: <MainPage />, 
   },
   {
     path: "/login",
@@ -56,7 +52,7 @@ const router = createBrowserRouter([
 
   // --- VÉDETT ÚTVONALAK ---
   {
-    element: <ProtectedRoute />, // Itt nincs path, csak védelem
+    element: <ProtectedRoute />, 
     children: [
       {
         path: "/dashboard",

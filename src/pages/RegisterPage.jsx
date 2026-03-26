@@ -31,7 +31,7 @@ function RegisterPage() {
 
     setLoading(true);
     try {
-      // Küldjük a telefonszámot is a backendnek
+      
       await register(name, username, phone, email, password);
       navigate("/login");
     } catch (err) {
@@ -74,7 +74,7 @@ function RegisterPage() {
             />
           </div>
 
-          {/* Telefonszám mező - újra a helyén */}
+          
           <div className="form-group">
             <label htmlFor="phone">Telefonszám</label>
             <input 

@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  // JAVÍTOTT Login: közvetlenül hívja a backendet
+  
   const login = async (email, password) => {
     try {
       const response = await fetch("http://localhost:3000/auth/login", {
@@ -33,8 +33,7 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || "Hibás email vagy jelszó");
       }
 
-      // Itt a backendtől kapott adatokat mentjük
-      // Mivel most nincs JWT-d, a token helyett használjunk egy fix stringet vagy a userId-t
+      
       const fakeToken = data.token || "logged-in-token"; 
       
       setToken(fakeToken);

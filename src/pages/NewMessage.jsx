@@ -8,6 +8,10 @@ function NewMessage() {
     const [title, setTitle] = useState(""); 
     const [message, setMessage] = useState("");
     const [target, setTarget] = useState("student");
+    
+    // Állapot a siker visszajelzéséhez
+    const [isSent, setIsSent] = useState(false);
+    
     const navigate = useNavigate();
     
     const handleLogout = async (e) => {
@@ -24,7 +28,7 @@ function NewMessage() {
 
     const handleSend = async () => {
         if (!title.trim() || !message.trim()) {
-            alert("Kérlek, töltsd ki a címet és az üzenetet is!");
+            alert("Cím és üzenet kitöltése kötelező!");
             return;
         }
 
@@ -45,16 +49,17 @@ function NewMessage() {
             });
 
             if (response.ok) {
-                alert(`Sikeresen elküldve!`);
+                
+                setIsSent(true);
+                
                 setMessage(""); 
                 setTitle("");
-            } else {
-                const errorData = await response.json();
-                alert("Hiba történt: " + (errorData.error || "Ismeretlen hiba"));
+                
+                setTimeout(() => setIsSent(false), 4000);
             }
         } catch (error) {
-            console.error("Hálózati hiba:", error);
-            alert("Nem sikerült kapcsolódni a szerverhez.");
+            console.error("Hiba:", error);
+            alert("Hálózati hiba!");
         }
     };
 
@@ -69,27 +74,10 @@ function NewMessage() {
                                 <img src={kepem} alt="Logo" width="100" height="50" className="rotate-45" />
                             </div>
                             <ul className="nav flex-column px-3">
-                                <li className="nav-item mb-2">
-                                    <Link className="nav-link OrangeText" to="/dashboard">
-                                        <i className="bi bi-house-door me-2"></i> Vezérlőpult
-                                    </Link>
-                                </li>
-                                <li className="nav-item mb-2">
-                                    <Link className="nav-link active-orangeSidebar" to="/newmessage">
-                                        <i className="bi bi-chat-dots me-2"></i> Új üzenet
-                                    </Link>
-                                </li>
-                                <li className="nav-item mb-2">
-                                    <Link className="nav-link OrangeText" to="/events">
-                                        <i className="bi bi-calendar-event me-2"></i> Események
-                                    </Link>
-                                </li>
-                                {/* FIÓK BEÁLLÍTÁSOK GOMB */}
-                                <li className="nav-item mb-2">
-                                    <Link className="nav-link OrangeText" to="/settings">
-                                        <i className="bi bi-person-gear me-2"></i> Fiók beállítások
-                                    </Link>
-                                </li>
+                                <li className="nav-item mb-2"><Link className="nav-link OrangeText" to="/dashboard"><i className="bi bi-house-door me-2"></i> Vezérlőpult</Link></li>
+                                <li className="nav-item mb-2"><Link className="nav-link active-orangeSidebar" to="/newmessage"><i className="bi bi-chat-dots me-2"></i> Új üzenet</Link></li>
+                                <li className="nav-item mb-2"><Link className="nav-link OrangeText" to="/events"><i className="bi bi-calendar-event me-2"></i> Események</Link></li>
+                                <li className="nav-item mb-2"><Link className="nav-link OrangeText" to="/settings"><i className="bi bi-person-gear me-2"></i> Fiók beállítások</Link></li>
                             </ul>
                         </div>
                         <div className="px-3 pb-4">
@@ -106,9 +94,6 @@ function NewMessage() {
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                         <header className="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
                             <h2 className="h4 text-secondary m-0">Új üzenet beküldése</h2>
-                            <span className="text-secondary small">
-                                Üdv, <strong className="text-orange">{user?.username || "Admin"}!</strong>
-                            </span>
                         </header>
 
                         <div className="row g-5">
@@ -127,52 +112,36 @@ function NewMessage() {
                                     </div>
 
                                     <label className="form-label text-orange fw-bold small text-uppercase">Üzenet címe</label>
-                                    <input 
-                                        type="text"
-                                        className="form-control mb-3 bg-black text-white border-secondary custom-input"
-                                        placeholder="Pl.: Iskolagyűlés vagy Elmaradó óra"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
+                                    <input type="text" className="form-control mb-3 bg-black text-white border-secondary" placeholder="Cím..." value={title} onChange={(e) => setTitle(e.target.value)} />
 
                                     <label className="form-label text-orange fw-bold small text-uppercase">Üzenet szövege</label>
-                                    <textarea 
-                                        className="form-control mb-4 bg-black text-white border-secondary custom-input" 
-                                        rows="5" 
-                                        placeholder="Írd ide a részleteket..." 
-                                        style={{ resize: "none" }} 
-                                        value={message} 
-                                        onChange={(e) => setMessage(e.target.value)}
-                                    ></textarea>
+                                    <textarea className="form-control mb-4 bg-black text-white border-secondary" rows="5" placeholder="Részletek..." style={{ resize: "none" }} value={message} onChange={(e) => setMessage(e.target.value)}></textarea>
                                     
+                                    {/* SIKERES KÜLDÉS SZÖVEG */}
+                                    {isSent && (
+                                        <div className="text-success fw-bold text-center mb-3 animate__animated animate__fadeIn">
+                                            <i className="bi bi-check2-all me-2"></i>
+                                            SIKERESEN ELKÜLDVE A SZERVERRE!
+                                        </div>
+                                    )}
+
                                     <button onClick={handleSend} className="btn btn-orange-glow w-100 py-3 fw-bold text-white">
-                                        <i className="bi bi-send-fill me-2 text-white" ></i> KÜLDÉS A KIJELZŐRE
+                                        <i className="bi bi-send-fill me-2 text-white"></i> KÜLDÉS A KIJELZŐRE
                                     </button>
                                 </div>
                             </div>
 
-                            {/* ÉLŐ ELŐNÉZET */}
+                            {/* ELŐNÉZET */}
                             <div className="col-lg-6">
-                                <h6 className="text-secondary text-center mb-3 small fw-bold text-uppercase">Élő előnézet (TV megjelenés)</h6>
-                                <div className="monitor-preview rounded shadow-lg d-flex flex-column align-items-center justify-content-center p-4 text-center position-relative" 
-                                     style={{ aspectRatio: "16/9", background: "#000", border: "12px solid #222", overflow: "hidden" }}>
-                                    
-                                    <h2 className="text-orange fw-bold mb-2" style={{ wordBreak: "break-word", fontSize: "2.5rem" }}>
-                                        {title || "CÍM HELYE"}
-                                    </h2>
-                                    <p className="h4 text-white m-0" style={{ wordBreak: "break-word", opacity: message ? 1 : 0.3 }}>
-                                        {message || "Az üzeneted szövege itt fog megjelenni..."}
-                                    </p>
-                                    
+                                <h6 className="text-secondary text-center mb-3 small fw-bold text-uppercase">Élő előnézet</h6>
+                                <div className="monitor-preview rounded shadow-lg d-flex flex-column align-items-center justify-content-center p-4 text-center position-relative" style={{ aspectRatio: "16/9", background: "#000", border: "12px solid #222", overflow: "hidden" }}>
+                                    <h2 className="text-orange fw-bold mb-2" style={{ wordBreak: "break-word", fontSize: "2.5rem" }}>{title || "CÍM"}</h2>
+                                    <p className="h4 text-white m-0" style={{ wordBreak: "break-word", opacity: message ? 1 : 0.3 }}>{message || "Üzenet helye..."}</p>
                                     <div className="position-absolute bottom-0 w-100 p-2 small fw-bold d-flex justify-content-between px-4" style={{ backgroundColor: "#ff6600", color: "#000" }}>
                                         <span>INFOSCREEN LIVE</span>
-                                        <span>CÉLCSOPORT: {target === "student" ? "DIÁKOK" : "TANÁROK"}</span>
+                                        <span>CÉL: {target === "student" ? "DIÁKOK" : "TANÁROK"}</span>
                                     </div>
                                 </div>
-                                <p className="text-secondary text-center mt-3 small italic">
-                                    <i className="bi bi-info-circle me-1"></i> 
-                                    A monitoron így fog megjelenni az üzenet.
-                                </p>
                             </div>
                         </div>
                     </main>

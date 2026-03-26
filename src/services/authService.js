@@ -10,30 +10,30 @@ const MOCK_USERS = [
 
 ];
 
-// Simulált késleltetés (mintha hálózati kérés lenne)
+// Simulált késleltetés (
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Login függvény - szimulálja a backend login endpoint-ot
+// Login függvény 
 export const login = async (email, password) => {
-  await delay(800); // Szimuláljuk a hálózati késleltetést
+  await delay(800); 
 
-  // Keressük meg a usert
+ 
   const user = MOCK_USERS.find((u) => u.email === email);
 
-  // Ha nincs ilyen user
+  
   if (!user) {
     throw new Error("Hibás email vagy jelszó");
   }
 
-  // Ha rossz a jelszó
+  
   if (user.password !== password) {
     throw new Error("Hibás email vagy jelszó");
   }
 
-  // Generálunk egy mock tokent
+  
   const token = `mock-token-${user.id}-${Date.now()}`;
 
-  // Visszaadjuk a user adatokat (jelszó nélkül) és a tokent
+  
   const { password: _, ...userWithoutPassword } = user;
 
   return {
@@ -42,11 +42,11 @@ export const login = async (email, password) => {
   };
 };
 
-// Register függvény - szimulálja a backend register endpoint-ot
-export const register = async (name, email, password) => {
-  await delay(800); // Szimuláljuk a hálózati késleltetést
 
-  // Ellenőrizzük, hogy létezik-e már ilyen email
+export const register = async (name, email, password) => {
+  await delay(800); 
+
+  
   const existingUser = MOCK_USERS.find((u) => u.email === email);
 
   if (existingUser) {
@@ -62,7 +62,7 @@ export const register = async (name, email, password) => {
 
   };
 
-  // Mock adatbázishoz hozzáadjuk
+  
   MOCK_USERS.push(newUser);
 
   return {
@@ -71,11 +71,11 @@ export const register = async (name, email, password) => {
   };
 };
 
-// Get user by token - szimulálja a backend /users/me endpoint-ot
+
 export const getUserByToken = async (token) => {
   await delay(500);
 
-  // Token formátum: mock-token-{userId}-{timestamp}
+  
   const userId = parseInt(token.split("-")[2]);
 
   const user = MOCK_USERS.find((u) => u.id === userId);
@@ -88,9 +88,9 @@ export const getUserByToken = async (token) => {
   return userWithoutPassword;
 };
 
-// Logout függvény - szimulálja a backend logout endpoint-ot
+
 export const logout = async () => {
   await delay(300);
-  // Mock logout - nincs mit csinálni, a frontend törli a tokent
+  
   return { success: true };
 };

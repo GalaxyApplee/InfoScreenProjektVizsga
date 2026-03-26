@@ -17,20 +17,20 @@ function StudentDisplay() {
     const ORANGE_COLOR = "#ff6600";
     const ROTATION_TIME = 12000;
 
-    // --- JAVÍTOTT FETCHDATA SZŰRÉSSEL ---
+    
     const fetchData = async () => {
         try {
             const now = new Date();
 
-            // 1. Általános hírek szűrése
+            
             const postsRes = await fetch("http://localhost:3000/posts");
             const postsData = await postsRes.json();
             setMessages(postsData.filter(m => 
                 (m.target === "student" || m.target === "all") &&
-                (!m.endDate || new Date(m.endDate) > now) // Csak ha még érvényes
+                (!m.endDate || new Date(m.endDate) > now) 
             ));
 
-            // 2. Heti események szűrése
+            
             const oneJan = new Date(now.getFullYear(), 0, 1);
             const weekNum = Math.ceil((((now - oneJan) / 86400000) + oneJan.getDay() + 1) / 7);
             
@@ -41,7 +41,7 @@ function StudentDisplay() {
                 (!e.endDate || new Date(e.endDate) > now)
             ));
 
-            // 3. Havi események szűrése
+            
             const monthRes = await fetch(`http://localhost:3000/posts/months/${now.getMonth() + 1}`);
             const monthData = await monthRes.json();
             setMonthlyEvents(monthData.filter(e => 
@@ -76,7 +76,7 @@ function StudentDisplay() {
         if (isPaired) {
             fetchData();
 
-            // Automatikus frissítés 30 percenként, hogy a lejártak eltűnjenek
+            
             const autoRefresh = setInterval(fetchData, 1800000);
 
             socket.on("new_post", (newPost) => {
@@ -120,7 +120,7 @@ function StudentDisplay() {
         return () => { clearInterval(timer); clearInterval(rotationInterval); };
     }, [viewMode, currentIndex, messages, popup, isPaired]);
 
-    // ... (A renderelés/UI rész változatlan marad, mint az előző kódodban)
+    
     if (!isPaired) {
         return (
             <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center">

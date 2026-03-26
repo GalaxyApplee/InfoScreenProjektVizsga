@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
-// Socket kapcsolat a szerverhez
+
 const socket = io("http://localhost:3000");
 
 function TeacherDisplay() {
@@ -9,18 +9,18 @@ function TeacherDisplay() {
     const [weeklyEvents, setWeeklyEvents] = useState([]);
     const [monthlyEvents, setMonthlyEvents] = useState([]);
     
-    const [viewMode, setViewMode] = useState('messages'); // messages, weekly, monthly
+    const [viewMode, setViewMode] = useState('messages'); 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [popup, setPopup] = useState(null);
     const [progress, setProgress] = useState(0);
 
-    const ROTATION_TIME = 10000; // 10 másodperces váltás
+    const ROTATION_TIME = 10000; 
 
     const fetchData = async () => {
         try {
             const postsRes = await fetch("http://localhost:3000/posts");
             const postsData = await postsRes.json();
-            // Csak a tanári (teacher) és az "all" típusú posztok
+            
             setMessages(postsData.filter(m => m.target === "teacher" || m.target === "all"));
 
             const now = new Date();
@@ -83,7 +83,7 @@ function TeacherDisplay() {
         };
     }, [viewMode, currentIndex, messages, popup]);
 
-    // --- POPUP NÉZET (KÉK) ---
+   
     if (popup) {
         return (
             <div className="vh-100 bg-black text-white d-flex align-items-center justify-content-center text-center p-5">
@@ -100,12 +100,12 @@ function TeacherDisplay() {
     return (
         <div style={{ backgroundColor: "#000", height: "100vh", color: "white", overflow: "hidden", position: "relative", fontFamily: "'Inter', sans-serif" }}>
             
-            {/* KÉK PROGRESS BAR */}
+            
             <div className="position-absolute top-0 start-0 bg-primary shadow-blue" style={{ width: `${progress}%`, transition: 'width 0.1s linear', zIndex: 10, height: '8px' }}></div>
 
             <div className="container-fluid h-100 d-flex flex-column pt-3">
                 
-                {/* 1. ÜZENETEK NÉZET */}
+                
                 {viewMode === 'messages' && (
                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center animate__animated animate__fadeIn">
                         {messages.length > 0 ? (
@@ -134,7 +134,7 @@ function TeacherDisplay() {
                     </div>
                 )}
 
-                {/* 2. HETI REND NÉZET */}
+                
                 {viewMode === 'weekly' && (
                     <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
                         <h1 className="display-2 fw-bold mb-5 border-bottom border-primary pb-3 text-primary d-flex align-items-center">
@@ -155,7 +155,7 @@ function TeacherDisplay() {
                     </div>
                 )}
 
-                {/* 3. HAVI TERV NÉZET */}
+                
                 {viewMode === 'monthly' && (
                     <div className="flex-grow-1 p-5 animate__animated animate__fadeIn">
                         <h1 className="display-2 fw-bold mb-5 border-bottom border-primary pb-3 text-primary d-flex align-items-center">
@@ -176,7 +176,7 @@ function TeacherDisplay() {
                     </div>
                 )}
 
-                {/* ALSÓ INFORMÁCIÓS SÁV */}
+                
                 <footer className="w-100 p-4 d-flex justify-content-between align-items-center mt-auto border-top border-secondary border-opacity-25">
                     <div className="d-flex align-items-center">
                         <div className="h2 m-0 fw-black tracking-tighter">

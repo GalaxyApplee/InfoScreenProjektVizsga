@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom"; // JAVÍTVA: react-router-dom kell!
+import { Link, useNavigate } from "react-router-dom"; 
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -12,7 +12,7 @@ function LoginPage() {
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Ha már be van jelentkezve, irányítsuk a dashboard-ra
+  
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/dashboard");
@@ -49,13 +49,11 @@ function LoginPage() {
 
     setLoading(true);
     try {
-      // Az AuthContext login függvényét hívjuk
+      
       await login(email, password);
-      // Sikeres login után a useEffect magától elnavigál, 
-      // de biztonság kedvéért itt is maradhat:
       navigate("/dashboard");
     } catch (error) {
-      // Itt jelenik meg a "Hibás email vagy jelszó" üzenet
+      
       setServerError(error.message);
     } finally {
       setLoading(false);
